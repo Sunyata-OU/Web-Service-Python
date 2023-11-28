@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "web-service-python"
+version = "0.1.0"
+description = "A template for a full service web service."
+authors = ["Tony <me@tonybenoy.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.104.1"
+pydantic = "^2.5.2"
+sqlalchemy = "^2.0.23"
+alembic = "^1.12.1"
+psycopg2 = "^2.9.9"
+gunicorn = "^21.2.0"
+uvicorn = "^0.24.0.post1"
+python-dotenv = "^1.0.0"
+jinja2 = "^3.1.2"
+boto3 = "^1.33.1"
+python-multipart = "^0.0.6"
+celery = "^5.3.6"
+redis = "^5.0.1"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.1.6"
+pre-commit = "^3.5.0"
+pytest = "^7.4.3"
+sqlalchemy-stubs = "^0.4"
+httpx = "^0.25.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 120

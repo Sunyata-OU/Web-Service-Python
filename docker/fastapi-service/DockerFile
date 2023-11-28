@@ -1,0 +1,22 @@
+ARG PYTHON_VERSION
+FROM python:${PYTHON_VERSION} as base
+RUN pip install poetry
+RUN poetry self add poetry-plugin-export
+COPY pyproject.toml /src/pyproject.toml
+COPY poetry.lock /src/poetry.lock
+WORKDIR /src
+RUN poetry export -f requirements.txt --output /src/requirements.txt --without-hashes
+
+FROM python:${PYTHON_VERSION}
+RUN apt-get update -y
+RUN apt-get upgrade -y
+
+RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+COPY --from=base /src/requirements.txt /src/requirements.txt
+RUN --mount=type=ssh pip install -r /src/requirements.txt
+COPY src/ /src
+COPY .env /src/.env
+WORKDIR /
+COPY docker/fastapi-service/start.sh /start.sh
+RUN chmod +x /start.sh
+CMD ["/start.sh"]
