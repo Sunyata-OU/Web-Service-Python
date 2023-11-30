@@ -1,0 +1,32 @@
+version: "3"
+services:
+  fastapi:
+    extends:
+      file: docker-compose.yml
+      service: fastapi
+    ports:
+      - 127.0.0.1:5678:5678
+    volumes:
+      - ./src:/src/
+    depends_on:
+      - redis_db
+      - minio
+      - db
+    command: "./start-debug.sh"
+  redis_db:
+    extends:
+      file: docker-compose.yml
+      service: redis_db
+  minio:
+    extends:
+      file: docker-compose.yml
+      service: minio
+  db:
+    extends:
+      file: docker-compose.yml
+      service: db
+
+  celery:
+    extends:
+      file: docker-compose.yml
+      service: celery

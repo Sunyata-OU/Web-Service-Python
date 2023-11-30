@@ -22,6 +22,7 @@ services:
       - redis_db
     volumes:
       - ./data/web/logs:/var/log/webapp
+    command: ./start.sh
   redis_db:
     image: redis:${REDIS_VERSION}
     network_mode: host

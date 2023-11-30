@@ -16,6 +16,7 @@ This a simple python web service that uses the Fastapi framework to create a RES
 - [x] Ruff
 - [x] Github actions for CI/CD
 - [x] Makefile for easy setup
+- [x] VS Code Debugger support through debugpy
 
 ## Installation
 
@@ -135,6 +136,19 @@ To downgrade the migration run the following command
 ```bash
 alembic downgrade -1
 ```
+
+### Using VS Code Debugger
+1. Install the python extension for VS Code.
+2. Use the included `launch.json` file to run the debugger.
+3. Use the custom docker compose file to run the debugger.
+```bash
+docker-compose -f docker-compose.debug.yml up
+```
+4. Set breakpoints in the code and run the debugger vs code(Wait for debugpy to be installed).
+5. The debugger should be running on port 5678.
+
+### Other editors
+Comment out the `debugpy` `start-debug.sh` file and run the docker compose file above.
 
 ### Setting up nginx and certbot
 

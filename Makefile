@@ -18,10 +18,13 @@ init:
 	@make sync-new-env
 	@poetry install
 	@poetry shell
-	@docker-compose build
-	@docker-compose up -d
+	@docker compose build
+	@docker compose up -d
 	@sleep 5
 	@make alembic-upgrade
-	@docker-compose exec minio sh -c "mc mb minio/$$(grep S3_BUCKET .env | cut -d '=' -f2)"
-	@docker-compose down
+	@docker compose exec minio sh -c "mc mb minio/$$(grep S3_BUCKET .env | cut -d '=' -f2)"
+	@docker compose down
 	@pre-commit install
+
+debugger:
+	@docker compose -f  docker-compose-debug.yml up

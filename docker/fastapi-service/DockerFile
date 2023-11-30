@@ -19,4 +19,5 @@ COPY .env /src/.env
 WORKDIR /
 COPY docker/fastapi-service/start.sh /start.sh
 RUN chmod +x /start.sh
-CMD ["/start.sh"]
+COPY docker/fastapi-service/start-debug.sh /start-debug.sh
+RUN chmod +x /start-debug.sh
