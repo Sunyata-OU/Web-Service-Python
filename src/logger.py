@@ -8,7 +8,11 @@ def setup_logger():
     logger = logging.getLogger(__name__)
     logger.setLevel(Settings.LOG_LEVEL)
     if not os.path.exists(Settings.LOG_PATH):
-        os.makedirs(Settings.LOG_PATH)
+        try:
+            os.makedirs(Settings.LOG_PATH)
+        except OSError:
+            Settings.LOG_PATH = "./logs/"
+            os.makedirs(Settings.LOG_PATH)
     log_file = os.path.join(Settings.LOG_PATH, "webservice-logs.txt")
 
     rotating_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024, backupCount=5)
