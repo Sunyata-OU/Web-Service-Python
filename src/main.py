@@ -1,8 +1,10 @@
 from typing import Dict
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from src.routes import index, s3
+
 from src.logger import logger
+from src.routes import index, s3
 from src.utils import get_current_date_time
 
 app = FastAPI()

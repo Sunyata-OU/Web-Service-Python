@@ -1,7 +1,9 @@
+import uuid
+
 import boto3
+
 from src.config import Settings
 from src.logger import logger
-import uuid
 
 
 def get_s3_client():

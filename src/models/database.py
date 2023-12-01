@@ -1,8 +1,10 @@
-from typing import Any, Generator
-from sqlalchemy import Column, Integer, create_engine, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
 from datetime import datetime
+from typing import Any, Generator
+
+from sqlalchemy import Column, DateTime, Integer, create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Session, sessionmaker
+
 from src.config import Settings
 
 engine = create_engine(Settings.DATABASE_URL)

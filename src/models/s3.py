@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String
+
 from src.models.database import BaseModel
 from src.s3 import get_object_url
 

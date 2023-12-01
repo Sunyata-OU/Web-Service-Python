@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, Request, UploadFile, File
-from src.logger import logger
+from fastapi import APIRouter, Depends, File, Request, UploadFile
 
+from src.config import Settings
+from src.logger import logger
 from src.models.database import get_db
 from src.models.s3 import S3Object
-from src.config import Settings
 from src.s3 import upload_object_to_s3
 
 router = APIRouter()
