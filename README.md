@@ -17,6 +17,8 @@ This a simple python web service that uses the Fastapi framework to create a RES
 - [x] Github actions for CI/CD
 - [x] Makefile for easy setup
 - [x] VS Code Debugger support through debugpy
+- [ ] Airflow
+- [ ] Multi Database
 
 ## Installation
 
