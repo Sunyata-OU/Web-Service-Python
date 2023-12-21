@@ -1,4 +1,5 @@
 version: "3"
+
 services:
   fastapi:
     build:
@@ -10,6 +11,8 @@ services:
         PYTHON_VERSION: ${PYTHON_VERSION}
         SERVICE_PORT: ${SERVICE_PORT}
         WORKERS_COUNT: ${WORKERS_COUNT}
+    container_name: fastapi-service
+    hostname: fastapi-service
     env_file:
       - .env
     image: fastapi-service
@@ -23,44 +26,58 @@ services:
     volumes:
       - ./data/web/logs:/var/log/webapp
     command: ./start.sh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${SERVICE_PORT}/test"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+
   redis_db:
     image: redis:${REDIS_VERSION}
     network_mode: host
     ports:
       - ${REDIS_PORT}:${REDIS_PORT}
-
-  minio:
-    image: minio/minio:${MINIO_VERSION}
-    network_mode: host
-    ports:
-      - ${S3_PORT}:${S3_PORT}
-      - ${MINIO_SERVER_PORT}:${MINIO_SERVER_PORT}
-    volumes:
-      - ./data/minio:/data
-    environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID}
-      MINIO_ROOT_PASSWORD: ${S3_ACCESS_KEY}
-    command: server --console-address ":${MINIO_SERVER_PORT}" /data
+    container_name: redis_db
+    hostname: redis_db
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
 
   db:
     image: postgres:${POSTGRES_VERSION}
     volumes:
       - ./data/db:/var/lib/postgresql/data
+      - ./docker/postgres/init :/docker-entrypoint-initdb.d/
     network_mode: host
+    container_name: db
+    hostname: db
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      interval: 5s
+      retries: 5
+    restart: always
 
   celery:
     image: fastapi-service
     command: celery -A src.celery worker --loglevel=info
+    container_name: celery
+    hostname: celery
     depends_on:
       - redis_db
     network_mode: host
 
   nginx:
     image: nginx:alpine
+    container_name: nginx
+    hostname: nginx
     ports:
       - mode: host
         protocol: tcp
@@ -75,10 +92,62 @@ services:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
     command: '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'''
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+    profiles:
+      - nginx
 
   certbot:
     image: certbot/certbot
+    container_name: certbot
+    hostname: certbot
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    profiles:
+      - nginx
+
+  minio:
+    image: minio/minio:${MINIO_VERSION}
+    container_name: minio
+    hostname: minio
+    command: server --address ":${S3_PORT}" --console-address ":${MINIO_SERVER_PORT}" /data
+    ports:
+      - ${S3_PORT}:${S3_PORT}
+      - ${MINIO_SERVER_PORT}:${MINIO_SERVER_PORT}
+    environment:
+      - MINIO_ROOT_USER=${S3_ACCESS_KEY_ID}
+      - MINIO_ROOT_PASSWORD=${S3_ACCESS_KEY}
+    volumes:
+      - ${PWD}/data/minio:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:${MINIO_SERVER_PORT}/minio/health/live",
+        ]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio "http://minio:${S3_PORT}" "${S3_ACCESS_KEY_ID}" "${S3_ACCESS_KEY}";
+      /usr/bin/mc admin info myminio;
+      /usr/bin/mc mb myminio/clickhouse;
+      /usr/bin/mc policy set public myminio/clickhouse;
+      if [ -z "${S3_BUCKET}" ]; then exit 0; fi;
+      /usr/bin/mc mb myminio/${S3_BUCKET}
+      /usr/bin/mc policy set public myminio/${S3_BUCKET};
+      exit 0;
+      "

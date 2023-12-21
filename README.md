@@ -18,7 +18,7 @@ This a simple python web service that uses the Fastapi framework to create a RES
 - [x] Makefile for easy setup
 - [x] VS Code Debugger support through debugpy
 - [ ] Airflow
-- [ ] Multi Database
+- [x] Multi Database
 
 ## Installation
 
@@ -154,10 +154,17 @@ Comment out the `debugpy` `start-debug.sh` file and run the docker compose file 
 
 ### Setting up nginx and certbot
 
+
+To run nginx and certbot run the following command:
+
+```bash
+docker-compose --profile nginx up
+```
+
 1. Modify configuration in `nginx/app.conf`, `init_cert.sh` with the appropriate config/credentials.
 
 2. Run the init script(Ensure that you have made the appropriate dns mapping for the server at your domain provider):
 
-```bash
-./init_cert.sh
-```
+    ```bash
+    ./init_cert.sh
+    ```
