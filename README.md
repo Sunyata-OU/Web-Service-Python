@@ -2,7 +2,7 @@
 
 ## Description
 
-This a simple python web service that uses the Fastapi framework to create a RESTful API as well as a webserver. This is meant to be used as a template for future projects.The project includes a fully dockerised environment with a docker-compose file to run the project. The project also includes postgresql database and a redis database. There is RQ worker support for asyncronous tasks. The included Minio server is used for file storage. The frontend is through the Jinja2 templating engine. It also includes Nginx and certbot for SSL support.
+This a simple python web service that uses the Fastapi framework to create a RESTful API as well as a webserver. This is meant to be used as a template for future projects.The project includes a fully dockerised environment with a docker-compose file to run the project. The project also includes postgresql database and a redis database. There is RQ worker support for asynchronous tasks. The included Minio server is used for file storage. The frontend is through the Jinja2 templating engine. It also includes Nginx and certbot for SSL support.
 ## Includes
 - [x] Fastapi
 - [x] Jinja2
