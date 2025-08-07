@@ -1,5 +1,6 @@
 from celery import Celery
 
-from src.config import Settings
+from src.config import get_settings
 
-default = Celery("default", broker=Settings.REDIS_URL, backend=Settings.REDIS_URL)
+settings = get_settings()
+default = Celery("default", broker=settings.redis_url, backend=settings.redis_url)

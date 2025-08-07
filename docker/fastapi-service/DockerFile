@@ -1,23 +1,90 @@
-ARG PYTHON_VERSION
-FROM python:${PYTHON_VERSION} as base
-RUN pip install poetry
-RUN poetry self add poetry-plugin-export
-COPY pyproject.toml /src/pyproject.toml
-COPY poetry.lock /src/poetry.lock
-WORKDIR /src
-RUN poetry export -f requirements.txt --output /src/requirements.txt --without-hashes
+ARG PYTHON_VERSION=3.11
 
-FROM python:${PYTHON_VERSION}
-RUN apt-get update -y
-RUN apt-get upgrade -y
+# Build stage
+FROM python:${PYTHON_VERSION}-slim as builder
 
-RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-COPY --from=base /src/requirements.txt /src/requirements.txt
-RUN --mount=type=ssh pip install -r /src/requirements.txt
-COPY src/ /src
-COPY .env /src/.env
-WORKDIR /
-COPY docker/fastapi-service/start.sh /start.sh
-RUN chmod +x /start.sh
-COPY docker/fastapi-service/start-debug.sh /start-debug.sh
-RUN chmod +x /start-debug.sh
+# Install system dependencies for building
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        git \
+        openssh-client && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set up SSH for private repositories
+RUN mkdir -p -m 0700 ~/.ssh && \
+    ssh-keyscan github.com gitlab.com bitbucket.org >> ~/.ssh/known_hosts
+
+# Install uv
+RUN pip install --no-cache-dir uv
+
+# Copy dependency files
+WORKDIR /app
+COPY pyproject.toml uv.lock* ./
+
+# Create virtual environment and install dependencies with SSH mount support
+RUN --mount=type=ssh uv venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN --mount=type=ssh uv sync --frozen --no-dev
+
+# Production stage
+FROM python:${PYTHON_VERSION}-slim
+
+# Install runtime dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
+        openssh-client \
+        git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set up SSH for runtime (needed for git operations)
+RUN mkdir -p -m 0700 ~/.ssh && \
+    ssh-keyscan github.com gitlab.com bitbucket.org >> ~/.ssh/known_hosts
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Create non-root user with proper SSH setup
+RUN groupadd --system --gid 1001 appgroup && \
+    useradd --system --uid 1001 --gid appgroup --create-home appuser
+
+# Set up SSH directory for non-root user
+RUN mkdir -p -m 0700 /home/appuser/.ssh && \
+    ssh-keyscan github.com gitlab.com bitbucket.org >> /home/appuser/.ssh/known_hosts && \
+    chown -R appuser:appgroup /home/appuser/.ssh
+
+# Set up application directory
+WORKDIR /app
+
+# Copy application code
+COPY --chown=appuser:appgroup src/ ./src/
+COPY --chown=appuser:appgroup .env* ./
+
+# Copy and set up startup scripts
+COPY --chown=appuser:appgroup docker/fastapi-service/start.sh /start.sh
+COPY --chown=appuser:appgroup docker/fastapi-service/start-debug.sh /start-debug.sh
+RUN chmod +x /start.sh /start-debug.sh
+
+# Switch to non-root user
+USER appuser
+
+# Set environment variables
+ENV PYTHONPATH=/app/src \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Default command
+CMD ["/start.sh"]

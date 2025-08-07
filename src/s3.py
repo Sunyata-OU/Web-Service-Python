@@ -2,7 +2,7 @@ import uuid
 
 import boto3
 
-from src.config import Settings
+from src.config import get_settings
 from src.logger import logger
 
 
@@ -10,19 +10,22 @@ def get_s3_client():
     """Get S3 client.
     Returns:
         boto3.client: The S3 client."""
-
+    
+    settings = get_settings()
     s3_client = boto3.client(
         "s3",
-        endpoint_url=Settings.S3_ENDPOINT,
-        aws_access_key_id=Settings.S3_ACCESS_KEY_ID,
-        aws_secret_access_key=Settings.S3_ACCESS_KEY,
+        endpoint_url=settings.s3_endpoint,
+        aws_access_key_id=settings.s3_access_key_id,
+        aws_secret_access_key=settings.s3_access_key,
         aws_session_token=None,
         verify=False,
     )
     return s3_client
 
 
-def upload_object_to_s3(file_name: str, file, bucket: str = Settings.S3_BUCKET):
+def upload_object_to_s3(file_name: str, file, bucket: str | None = None):
+    settings = get_settings()
+    bucket = bucket or settings.s3_bucket
     filename = f"{uuid.uuid4().hex}{file_name}"
     s3_client = get_s3_client()
     if not s3_client:

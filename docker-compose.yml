@@ -1,4 +1,15 @@
-version: "3"
+version: "3.8"
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  nginx_logs:
+  app_logs:
 
 services:
   fastapi:
@@ -18,39 +29,74 @@ services:
     image: fastapi-service
     ports:
       - "${SERVICE_PORT}:${SERVICE_PORT}"
-    network_mode: host
+    networks:
+      - app-network
     depends_on:
       - db
       - minio
       - redis_db
     volumes:
-      - ./data/web/logs:/var/log/webapp
+      - app_logs:/var/log/webapp
     command: ./start.sh
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${SERVICE_PORT}/test"]
-      interval: 5s
-      timeout: 30s
-      retries: 50
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
 
   redis_db:
     image: redis:${REDIS_VERSION}
-    network_mode: host
+    networks:
+      - app-network
     ports:
       - ${REDIS_PORT}:${REDIS_PORT}
     container_name: redis_db
     hostname: redis_db
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 30s
-      retries: 50
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
 
   db:
     image: postgres:${POSTGRES_VERSION}
     volumes:
-      - ./data/db:/var/lib/postgresql/data
-      - ./docker/postgres/init :/docker-entrypoint-initdb.d/
-    network_mode: host
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d/
+    networks:
+      - app-network
     container_name: db
     hostname: db
     ports:
@@ -61,53 +107,118 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
-      interval: 5s
-      retries: 5
-    restart: always
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
 
   celery:
     image: fastapi-service
     command: celery -A src.celery worker --loglevel=info
     container_name: celery
     hostname: celery
+    env_file:
+      - .env
+    networks:
+      - app-network
     depends_on:
       - redis_db
-    network_mode: host
+      - db
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
 
   nginx:
-    image: nginx:alpine
+    image: nginx:1.25-alpine
     container_name: nginx
     hostname: nginx
+    networks:
+      - app-network
     ports:
-      - mode: host
-        protocol: tcp
-        published: 80
-        target: 80
-      - mode: host
-        protocol: tcp
-        published: 443
-        target: 443
+      - "80:80"
+      - "443:443"
     volumes:
-      - ./nginx:/etc/nginx/conf.d
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - ./nginx:/etc/nginx/conf.d:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - nginx_logs:/var/log/nginx
     command: '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'''
+    depends_on:
+      - fastapi
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
-      interval: 5s
-      timeout: 30s
-      retries: 50
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.25'
+        reservations:
+          memory: 32M
+          cpus: '0.1'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
     profiles:
       - nginx
 
   certbot:
-    image: certbot/certbot
+    image: certbot/certbot:latest
     container_name: certbot
     hostname: certbot
+    networks:
+      - app-network
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done;'"
+    depends_on:
+      - nginx
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.25'
+        reservations:
+          memory: 32M
+          cpus: '0.1'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
     profiles:
       - nginx
 
@@ -115,6 +226,8 @@ services:
     image: minio/minio:${MINIO_VERSION}
     container_name: minio
     hostname: minio
+    networks:
+      - app-network
     command: server --address ":${S3_PORT}" --console-address ":${MINIO_SERVER_PORT}" /data
     ports:
       - ${S3_PORT}:${S3_PORT}
@@ -123,7 +236,7 @@ services:
       - MINIO_ROOT_USER=${S3_ACCESS_KEY_ID}
       - MINIO_ROOT_PASSWORD=${S3_ACCESS_KEY}
     volumes:
-      - ${PWD}/data/minio:/data
+      - minio_data:/data
     healthcheck:
       test:
         [
@@ -132,12 +245,29 @@ services:
           "-f",
           "http://localhost:${MINIO_SERVER_PORT}/minio/health/live",
         ]
-      interval: 5s
-      timeout: 30s
-      retries: 50
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
 
   createbuckets:
     image: minio/mc
+    networks:
+      - app-network
     depends_on:
       - minio
     entrypoint: >
@@ -151,3 +281,13 @@ services:
       /usr/bin/mc policy set public myminio/${S3_BUCKET};
       exit 0;
       "
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

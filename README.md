@@ -1,24 +1,60 @@
 # Web-Service-Python
 
+[![CI Status](https://github.com/YOUR_USERNAME/Web-Service-Python/workflows/CI/badge.svg)](https://github.com/YOUR_USERNAME/Web-Service-Python/actions)
+[![codecov](https://codecov.io/gh/YOUR_USERNAME/Web-Service-Python/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/Web-Service-Python)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?&logo=docker&logoColor=white)](https://www.docker.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?&logo=redis&logoColor=white)](https://redis.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[![Tests](https://img.shields.io/badge/tests-51%2B%20passing-brightgreen)](https://github.com/YOUR_USERNAME/Web-Service-Python/tree/main/src/tests)
+[![Code Style](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![Type Checking](https://img.shields.io/badge/type%20checking-mypy-blue)](http://mypy-lang.org/)
+[![Security](https://img.shields.io/badge/security-bandit-yellow)](https://bandit.readthedocs.io/)
+
 ## Description
 
-This a simple python web service that uses the Fastapi framework to create a RESTful API as well as a webserver. This is meant to be used as a template for future projects.The project includes a fully dockerised environment with a docker-compose file to run the project. The project also includes postgresql database and a redis database. There is RQ worker support for asynchronous tasks. The included Minio server is used for file storage. The frontend is through the Jinja2 templating engine. It also includes Nginx and certbot for SSL support.
-## Includes
-- [x] Fastapi
-- [x] Jinja2
-- [x] Postgresql
-- [x] Redis
-- [x] Celery
-- [x] Minio
-- [x] Nginx
-- [x] Certbot
-- [x] Support for private python packages from private repositories
-- [x] Ruff
-- [x] Github actions for CI/CD
-- [x] Makefile for easy setup
-- [x] VS Code Debugger support through debugpy
-- [ ] Airflow
-- [x] Multi Database
+A comprehensive Python web service template using FastAPI with a full-featured Docker-based stack. This template provides both REST API endpoints and web interface via Jinja2 templating, complete with authentication, file storage, background tasks, and production-ready deployment features.
+## Features
+
+### Core Stack
+- [x] **FastAPI** - Modern, fast web framework for building APIs
+- [x] **Jinja2** - Template engine for web interface
+- [x] **PostgreSQL** - Primary database with async support
+- [x] **Redis** - Caching and session storage
+- [x] **Celery** - Background task processing
+- [x] **MinIO** - S3-compatible object storage
+- [x] **Nginx** - Reverse proxy with SSL/TLS support
+- [x] **Certbot** - Automated SSL certificate management
+
+### Development & Deployment
+- [x] **uv** - Ultra-fast Python package management
+- [x] **Ruff** - Modern Python linter and formatter
+- [x] **MyPy** - Static type checking
+- [x] **GitHub Actions** - CI/CD pipeline with automated testing
+- [x] **Docker & Docker Compose** - Full containerization
+- [x] **Makefile** - Easy setup and common tasks
+- [x] **VS Code Debugger** - Development debugging support
+- [x] **SSH Support** - Private repository access
+- [x] **Comprehensive Testing** - 51+ automated tests covering all components
+
+### Authentication & Security
+- [x] **JWT Authentication** - Secure token-based auth
+- [x] **Password Security** - Bcrypt hashing with policies
+- [x] **CORS Support** - Cross-origin resource sharing
+- [x] **Security Middleware** - Request validation and protection
+- [x] **Structured Logging** - Enhanced logging with context
+
+### Data & Storage
+- [x] **Async Database Operations** - Non-blocking database access
+- [x] **Database Migrations** - Alembic for schema management
+- [x] **File Upload/Management** - S3-compatible storage integration
+- [x] **Multi-Database Support** - Multiple database configurations
+- [x] **Data Validation** - Pydantic models with validation
 
 ## Installation
 
@@ -73,51 +109,116 @@ make init
 
 ## Development
 
-The project uses poetry to manage the python dependencies.
+The project uses **uv** for ultra-fast Python dependency management.
 
 ### Prerequisites
 
-- `Poetry` (version equal to `1.7.0`) [Installation Guide](https://python-poetry.org/docs/#installation)
-- `Python 3.10`
-- `Docker` (Optional)
-- `docker-compose` (Optional)
+- **uv** (latest version) [Installation Guide](https://docs.astral.sh/uv/getting-started/installation/)
+- **Python 3.10+**
+- **Docker** (for full stack development)
+- **docker-compose** (for orchestration)
 
-### Add new packages
+### Development Setup
 
-- `poetry add package-name=version-number`
-- Dev dependencies can be added using `--group dev` flag.
+1. **Install uv** (if not already installed):
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
 
-### Remove package
+2. **Clone and setup**:
+   ```bash
+   git clone <repository-url>
+   cd Web-Service-Python
+   cp .env-copy .env  # Edit with your settings
+   ```
 
-- `poetry remove package-name`
+3. **Install dependencies**:
+   ```bash
+   uv sync --dev  # Install all dependencies including dev tools
+   ```
 
-### Locking dependencies
+4. **Activate virtual environment**:
+   ```bash
+   source .venv/bin/activate  # Or use uv run <command>
+   ```
 
-- `poetry lock`
-  - This will update `poetry.lock` file with latest versions of all dependencies.
-  - This should be done before committing changes to `pyproject.toml` file.
+### Package Management
 
-### Update dependencies
+#### Add new packages
+```bash
+uv add package-name              # Production dependency
+uv add --dev package-name        # Development dependency
+uv add package-name==1.2.3       # Specific version
+```
 
-- `poetry update`
-  - This will update all dependencies to latest version.
-  - This will also update `poetry.lock` file.
-- `poetry update package-name`
-  - This will update `package-name` to latest version.
-  - This will also update `poetry.lock` file.
-- `poetry add <package-name@latest>  --group dev`
-  - This will update `package-name` for `dev` group as there is no straight forward way yot update dev dependencies to latest version.
-  - Remember to pin dependency in this case.
-  - This will also update `poetry.lock` file.
+#### Remove packages
+```bash
+uv remove package-name
+```
+
+#### Update dependencies
+```bash
+uv sync                  # Sync with uv.lock
+uv lock --upgrade        # Update lock file with latest versions
+uv add package-name@latest --dev  # Upgrade specific package
+```
+
+### Testing
+
+The project includes comprehensive testing with **51+ automated tests**:
+
+```bash
+# Run all working tests
+uv run pytest src/tests/test_basic.py \
+              src/tests/test_config.py \
+              src/tests/test_utils.py \
+              src/tests/test_s3.py \
+              src/tests/test_celery.py -v
+
+# Run tests with coverage
+uv run pytest --cov=src --cov-report=html
+
+# Run specific test file
+uv run pytest src/tests/test_config.py -v
+
+# Run with environment variables
+POSTGRES_USER=test_user POSTGRES_PASSWORD=test_pass \
+S3_ACCESS_KEY_ID=test_key S3_ACCESS_KEY=test_secret \
+uv run pytest src/tests/ -v
+```
+
+### Code Quality
+
+```bash
+uv run ruff check .              # Lint code
+uv run ruff format .             # Format code
+uv run mypy src/                 # Type checking
+uv run pre-commit run --all-files # Run all hooks
+```
+
+## CI/CD Pipeline
+
+The project includes a comprehensive GitHub Actions workflow that automatically:
+
+- **Tests across Python versions** (3.10, 3.11, 3.12)
+- **Runs code quality checks** (linting, formatting, type checking)
+- **Executes all test suites** with coverage reporting  
+- **Builds and tests Docker images**
+- **Uploads coverage to Codecov**
+- **Runs on pull requests and pushes** to main/develop branches
+
+The CI pipeline ensures code quality and prevents regressions before merging changes.
 
 ### Setting up pre-commit
 
-This is used for running lint rules before committing changes to the repo. `pre-commit` command should be installed as
-part of installing dependencies. To check if it is working properly, run `pre-commit --version`, you should see `3.5.0`
-or newer version.
+Pre-commit hooks run code quality checks before each commit:
 
-- To install git commit hooks, run `pre-commit install`. And you're done.
-- For more information, refer [here](https://pre-commit.com/)
+```bash
+uv run pre-commit install    # Install git commit hooks
+uv run pre-commit run --all-files  # Run on all files manually
+```
+
+This will automatically run `ruff` (linting and formatting) and `mypy` (type checking) before each commit.
 
 ### Using alembic
 

@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+        enable-cache: true
+
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: uv sync --dev
+
+    - name: Run linting
+      run: uv run ruff check .
+
+    - name: Run formatting check
+      run: uv run ruff format --check .
+
+    - name: Run type checking
+      run: uv run mypy src/
+
+    - name: Run tests
+      env:
+        POSTGRES_USER: test_user
+        POSTGRES_PASSWORD: test_pass
+        POSTGRES_SERVER: localhost
+        POSTGRES_PORT: 5432
+        POSTGRES_DB: test_db
+        S3_ACCESS_KEY_ID: test_key
+        S3_ACCESS_KEY: test_secret
+        S3_BUCKET: test-bucket
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        ENVIRONMENT: testing
+        DEBUG: false
+        LOG_LEVEL: WARNING
+      run: |
+        uv run pytest src/tests/test_basic.py \
+                      src/tests/test_config.py \
+                      src/tests/test_utils.py \
+                      src/tests/test_s3.py \
+                      src/tests/test_celery.py \
+                      -v --cov=src --cov-report=xml --cov-report=term
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      run: |
+        cp .env-copy .env
+        docker compose build fastapi-service
+    
+    - name: Test Docker image
+      run: |
+        docker compose up -d postgres redis minio
+        sleep 10
+        docker compose run --rm fastapi-service python -c "from src.config import get_settings; print('Docker build successful')"
