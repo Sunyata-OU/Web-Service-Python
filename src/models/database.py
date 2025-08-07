@@ -4,9 +4,9 @@ This module is maintained for backward compatibility only.
 Use src.database and src.models.base for new async patterns.
 """
 
+import warnings
 from datetime import datetime
 from typing import Any, Generator
-import warnings
 
 from sqlalchemy import Column, DateTime, Integer, create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -18,13 +18,13 @@ from src.config import get_settings
 warnings.warn(
     "src.models.database is deprecated. Use src.database and src.models.base for async patterns.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 settings = get_settings()
 
 # Legacy sync engine - kept for backward compatibility
-engine = create_engine(settings.database_url.replace('+asyncpg', ''))  # Remove async driver
+engine = create_engine(settings.database_url.replace("+asyncpg", ""))  # Remove async driver
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Import Base from the new async database
@@ -46,7 +46,7 @@ def get_db() -> Generator[Session, Any, None]:
 
 class BaseModel(Base):
     """Legacy base model - DEPRECATED. Use AsyncBaseModel from src.models.base."""
-    
+
     __abstract__ = True
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     created_at = Column(DateTime, default=datetime.utcnow)

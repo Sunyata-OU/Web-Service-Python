@@ -5,41 +5,41 @@ Test configuration and fixtures.
 import asyncio
 import os
 from typing import AsyncGenerator, Generator
-from unittest.mock import Mock, AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-import pytest_asyncio
+from fastapi.testclient import TestClient
+from httpx import AsyncClient
 from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from httpx import AsyncClient
-from fastapi.testclient import TestClient
 
 # Set test environment variables BEFORE importing anything else
-os.environ.update({
-    'POSTGRES_USER': 'test_user',
-    'POSTGRES_PASSWORD': 'test_pass',
-    'POSTGRES_SERVER': 'localhost',
-    'POSTGRES_PORT': '5432',
-    'POSTGRES_DB': 'test_db',
-    'S3_ACCESS_KEY_ID': 'test_key',
-    'S3_ACCESS_KEY': 'test_secret',
-    'S3_BUCKET': 'test-bucket',
-    'ENVIRONMENT': 'testing',
-    'DEBUG': 'false',
-    'LOG_LEVEL': 'WARNING',
-    'SECRET_KEY': 'test-secret-key-for-testing-only',
-    'REDIS_HOST': 'localhost',
-    'REDIS_PORT': '6379',
-    'REDIS_DB': '1',  # Use different DB for testing
-})
+os.environ.update(
+    {
+        "POSTGRES_USER": "test_user",
+        "POSTGRES_PASSWORD": "test_pass",
+        "POSTGRES_SERVER": "localhost",
+        "POSTGRES_PORT": "5432",
+        "POSTGRES_DB": "test_db",
+        "S3_ACCESS_KEY_ID": "test_key",
+        "S3_ACCESS_KEY": "test_secret",
+        "S3_BUCKET": "test-bucket",
+        "ENVIRONMENT": "testing",
+        "DEBUG": "false",
+        "LOG_LEVEL": "WARNING",
+        "SECRET_KEY": "test-secret-key-for-testing-only",
+        "REDIS_HOST": "localhost",
+        "REDIS_PORT": "6379",
+        "REDIS_DB": "1",  # Use different DB for testing
+    }
+)
 
-from src.main import create_app
 from src.database import Base, get_async_db
-from src.models.user import User, APIKey, RefreshToken
+from src.main import create_app
 from src.models.s3 import S3Object
-from src.auth import get_current_user
+from src.models.user import APIKey, User
 
 
 # Test database setup
@@ -60,10 +60,10 @@ async def async_test_engine():
         poolclass=StaticPool,
         connect_args={"check_same_thread": False},
     )
-    
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     yield engine
     await engine.dispose()
 
@@ -77,7 +77,7 @@ def sync_test_engine():
         poolclass=StaticPool,
         connect_args={"check_same_thread": False},
     )
-    
+
     Base.metadata.create_all(bind=engine)
     return engine
 
@@ -85,10 +85,8 @@ def sync_test_engine():
 @pytest.fixture
 async def async_db_session(async_test_engine) -> AsyncGenerator[AsyncSession, None]:
     """Create async database session for testing."""
-    async_session_maker = async_sessionmaker(
-        async_test_engine, class_=AsyncSession, expire_on_commit=False
-    )
-    
+    async_session_maker = async_sessionmaker(async_test_engine, class_=AsyncSession, expire_on_commit=False)
+
     async with async_session_maker() as session:
         try:
             yield session
@@ -100,13 +98,13 @@ async def async_db_session(async_test_engine) -> AsyncGenerator[AsyncSession, No
 def sync_db_session(sync_test_engine) -> Generator:
     """Create sync database session for legacy tests."""
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_test_engine)
-    
+
     connection = sync_test_engine.connect()
     transaction = connection.begin()
     session = TestingSessionLocal(bind=connection)
-    
+
     yield session
-    
+
     session.close()
     transaction.rollback()
     connection.close()
@@ -136,9 +134,10 @@ async def async_client(app) -> AsyncGenerator[AsyncClient, None]:
 @pytest.fixture
 def override_async_db(async_db_session):
     """Override async database dependency."""
+
     async def _override_get_async_db():
         yield async_db_session
-    
+
     return _override_get_async_db
 
 
@@ -151,7 +150,7 @@ async def test_user(async_db_session: AsyncSession) -> User:
         email="test@example.com",
         username="testuser",
         password="testpass123",
-        full_name="Test User"
+        full_name="Test User",
     )
     await async_db_session.commit()
     return user
@@ -161,13 +160,14 @@ async def test_user(async_db_session: AsyncSession) -> User:
 async def admin_user(async_db_session: AsyncSession) -> User:
     """Create test admin user."""
     from src.auth import UserRole
+
     user = await User.create_user(
         db=async_db_session,
         email="admin@example.com",
         username="admin",
         password="adminpass123",
         full_name="Admin User",
-        role=UserRole.ADMIN
+        role=UserRole.ADMIN,
     )
     await async_db_session.commit()
     return user
@@ -177,32 +177,22 @@ async def admin_user(async_db_session: AsyncSession) -> User:
 def user_token(test_user: User) -> str:
     """Create access token for test user."""
     from src.auth import create_access_token
-    return create_access_token(
-        subject=test_user.email,
-        user_id=test_user.id,
-        role=test_user.role
-    )
+
+    return create_access_token(subject=test_user.email, user_id=test_user.id, role=test_user.role)
 
 
 @pytest.fixture
 def admin_token(admin_user: User) -> str:
     """Create access token for admin user."""
     from src.auth import create_access_token
-    return create_access_token(
-        subject=admin_user.email,
-        user_id=admin_user.id,
-        role=admin_user.role
-    )
+
+    return create_access_token(subject=admin_user.email, user_id=admin_user.id, role=admin_user.role)
 
 
 @pytest.fixture
 async def test_api_key(async_db_session: AsyncSession, test_user: User) -> tuple[APIKey, str]:
     """Create test API key."""
-    api_key, raw_key = await APIKey.create_for_user(
-        db=async_db_session,
-        user_id=test_user.id,
-        name="Test API Key"
-    )
+    api_key, raw_key = await APIKey.create_for_user(db=async_db_session, user_id=test_user.id, name="Test API Key")
     await async_db_session.commit()
     return api_key, raw_key
 
@@ -217,7 +207,7 @@ async def test_s3_object(async_db_session: AsyncSession) -> S3Object:
         object_name="test-file.txt",
         file_name="test-file.txt",
         file_type="text/plain",
-        file_size="123"
+        file_size="123",
     )
     await async_db_session.commit()
     return s3_obj
@@ -227,7 +217,7 @@ async def test_s3_object(async_db_session: AsyncSession) -> S3Object:
 @pytest.fixture
 def mock_redis():
     """Mock Redis connection."""
-    with patch('src.cache.redis') as mock_redis_module:
+    with patch("src.cache.redis") as mock_redis_module:
         mock_client = Mock()
         mock_client.from_url.return_value = mock_client
         mock_client.ping.return_value = True
@@ -238,7 +228,7 @@ def mock_redis():
         mock_client.exists.return_value = False
         mock_client.ttl.return_value = -1
         mock_client.incr.return_value = 1
-        
+
         mock_redis_module.from_url = Mock(return_value=mock_client)
         yield mock_client
 
@@ -267,6 +257,7 @@ def mock_celery_task():
 def sample_text_file():
     """Sample text file for testing."""
     from io import BytesIO
+
     content = b"This is a test file content"
     return BytesIO(content)
 
@@ -275,17 +266,16 @@ def sample_text_file():
 def sample_image_file():
     """Sample image file for testing."""
     from io import BytesIO
+
     # Minimal PNG file header
-    content = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\tpHYs\x00\x00\x0b\x13\x00\x00\x0b\x13\x01\x00\x9a\x9c\x18\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xdb\x00\x00\x00\x00IEND\xaeB`\x82'
+    content = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\tpHYs\x00\x00\x0b\x13\x00\x00\x0b\x13\x01\x00\x9a\x9c\x18\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xdb\x00\x00\x00\x00IEND\xaeB`\x82"
     return BytesIO(content)
 
 
 @pytest.fixture
 def upload_file_data(sample_text_file):
     """File upload data for multipart form."""
-    return {
-        "file": ("test.txt", sample_text_file, "text/plain")
-    }
+    return {"file": ("test.txt", sample_text_file, "text/plain")}
 
 
 # Authentication helpers
@@ -320,48 +310,40 @@ def override_dependencies(app, override_async_db):
 # Test data factories
 class UserFactory:
     """Factory for creating test users."""
-    
+
     @staticmethod
     async def create(
-        db: AsyncSession,
-        email: str = None,
-        username: str = None,
-        password: str = "testpass123",
-        **kwargs
+        db: AsyncSession, email: str = None, username: str = None, password: str = "testpass123", **kwargs
     ) -> User:
         """Create user with unique email/username if not provided."""
         import uuid
+
         suffix = str(uuid.uuid4())[:8]
-        
+
         return await User.create_user(
             db=db,
             email=email or f"user-{suffix}@example.com",
             username=username or f"user{suffix}",
             password=password,
-            **kwargs
+            **kwargs,
         )
 
 
 class S3ObjectFactory:
     """Factory for creating test S3 objects."""
-    
+
     @staticmethod
-    async def create(
-        db: AsyncSession,
-        bucket_name: str = "test-bucket",
-        object_name: str = None,
-        **kwargs
-    ) -> S3Object:
+    async def create(db: AsyncSession, bucket_name: str = "test-bucket", object_name: str = None, **kwargs) -> S3Object:
         """Create S3 object with unique object name if not provided."""
         import uuid
-        
+
         return await S3Object.create(
             db,
             bucket_name=bucket_name,
             object_name=object_name or f"test-{uuid.uuid4().hex[:8]}.txt",
-            file_name=kwargs.get('file_name', 'test.txt'),
-            file_type=kwargs.get('file_type', 'text/plain'),
-            **kwargs
+            file_name=kwargs.get("file_name", "test.txt"),
+            file_type=kwargs.get("file_type", "text/plain"),
+            **kwargs,
         )
 
 
@@ -377,6 +359,6 @@ def pytest_configure(config):
 def setup_test_environment():
     """Set up test environment."""
     # Disable external connections during testing
-    os.environ['TESTING'] = 'true'
+    os.environ["TESTING"] = "true"
     yield
     # Cleanup if needed

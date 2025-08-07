@@ -1,15 +1,14 @@
 from contextlib import asynccontextmanager
 from typing import Dict
 
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
 
 from src.config import get_settings
+from src.error_handlers import setup_error_handlers
 from src.logger import logger
 from src.middleware import setup_middleware
-from src.error_handlers import setup_error_handlers
-from src.routes import index, s3, auth
+from src.routes import auth, index, s3
 from src.utils import get_current_date_time
 
 
@@ -22,14 +21,14 @@ async def lifespan(app: FastAPI):
     logger.info(f"Environment: {settings.environment}")
     logger.info(f"Debug mode: {settings.debug}")
     yield
-    # Shutdown  
+    # Shutdown
     logger.info("🛑 Application shutting down...")
 
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     settings = get_settings()
-    
+
     # Create FastAPI app with lifespan management
     app = FastAPI(
         title="Web Service Template",
@@ -40,20 +39,18 @@ def create_app() -> FastAPI:
         redoc_url="/redoc" if settings.enable_docs else None,
         lifespan=lifespan,
     )
-    
+
     # Set up middleware
     setup_middleware(app)
-    
+
     # Set up error handlers
     setup_error_handlers(app)
-    
+
     return app
 
 
 # Create the application
 app = create_app()
-
-
 
 
 # Mount static files
@@ -69,11 +66,7 @@ app.include_router(s3.router)
 @app.get("/health")
 async def health_check() -> Dict[str, str]:
     """Health check endpoint for monitoring."""
-    return {
-        "status": "healthy",
-        "timestamp": get_current_date_time(),
-        "version": "0.1.0"
-    }
+    return {"status": "healthy", "timestamp": get_current_date_time(), "version": "0.1.0"}
 
 
 @app.get("/test", response_model=Dict[str, str])
@@ -89,9 +82,4 @@ async def test() -> Dict[str, str]:
 @app.get("/")
 async def root() -> Dict[str, str]:
     """Root endpoint with basic application information."""
-    return {
-        "message": "Web Service Template API",
-        "version": "0.1.0",
-        "docs": "/docs",
-        "health": "/health"
-    }
+    return {"message": "Web Service Template API", "version": "0.1.0", "docs": "/docs", "health": "/health"}

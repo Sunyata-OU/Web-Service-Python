@@ -1,6 +1,6 @@
-import pytest
 from datetime import datetime
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
 from freezegun import freeze_time
 
 from src.utils import get_current_date_time
@@ -31,15 +31,15 @@ class TestGetCurrentDateTime:
             result = get_current_date_time()
             assert result == "2024-01-01 00:00:00"
 
-    @patch('src.utils.datetime')
+    @patch("src.utils.datetime")
     def test_get_current_date_time_calls_datetime_now(self, mock_datetime):
         """Test that the function calls datetime.now()."""
         mock_now = Mock()
         mock_now.strftime.return_value = "2024-01-15 14:30:45"
         mock_datetime.now.return_value = mock_now
-        
+
         result = get_current_date_time()
-        
+
         mock_datetime.now.assert_called_once()
         mock_now.strftime.assert_called_once_with("%Y-%m-%d %H:%M:%S")
         assert result == "2024-01-15 14:30:45"
@@ -59,13 +59,13 @@ class TestGetCurrentDateTime:
         """Test that the returned string contains expected separators."""
         result = get_current_date_time()
         assert "-" in result  # Date separators
-        assert ":" in result  # Time separators  
+        assert ":" in result  # Time separators
         assert " " in result  # Space between date and time
 
     def test_get_current_date_time_parseable(self):
         """Test that the returned string can be parsed back to datetime."""
         result = get_current_date_time()
-        
+
         # Should be able to parse the string back to datetime
         parsed_datetime = datetime.strptime(result, "%Y-%m-%d %H:%M:%S")
         assert isinstance(parsed_datetime, datetime)
@@ -74,10 +74,10 @@ class TestGetCurrentDateTime:
         """Test that multiple calls at different times return different values."""
         with freeze_time("2024-01-15 14:30:45"):
             result1 = get_current_date_time()
-        
+
         with freeze_time("2024-01-15 14:30:46"):
             result2 = get_current_date_time()
-        
+
         assert result1 != result2
         assert result1 == "2024-01-15 14:30:45"
         assert result2 == "2024-01-15 14:30:46"

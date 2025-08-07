@@ -10,7 +10,7 @@ def get_s3_client():
     """Get S3 client.
     Returns:
         boto3.client: The S3 client."""
-    
+
     settings = get_settings()
     s3_client = boto3.client(
         "s3",

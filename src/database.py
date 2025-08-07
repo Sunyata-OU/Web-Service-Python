@@ -7,9 +7,9 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional
 
 from sqlalchemy import create_engine, pool
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from src.config import get_settings
 from src.logger import logger
@@ -29,21 +29,17 @@ sync_engine = create_engine(
 )
 
 # Sync session
-SyncSessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=sync_engine
-)
+SyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine)
 
 # Async engine with optimized connection pool
 async_engine = create_async_engine(
     settings.async_database_url,
-    pool_size=20,          # Core connection pool size
-    max_overflow=30,       # Additional overflow connections
-    pool_pre_ping=True,    # Validate connections before use
-    pool_recycle=3600,     # Recycle connections every hour
-    pool_timeout=30,       # Timeout for getting connection
-    echo=settings.debug,   # Log SQL in debug mode
+    pool_size=20,  # Core connection pool size
+    max_overflow=30,  # Additional overflow connections
+    pool_pre_ping=True,  # Validate connections before use
+    pool_recycle=3600,  # Recycle connections every hour
+    pool_timeout=30,  # Timeout for getting connection
+    echo=settings.debug,  # Log SQL in debug mode
 )
 
 # Async session factory
@@ -61,13 +57,13 @@ Base = declarative_base()
 
 class DatabaseManager:
     """Database connection manager with health monitoring."""
-    
+
     def __init__(self):
         self.async_engine = async_engine
         self.sync_engine = sync_engine
         self._health_check_interval = 60  # seconds
         self._health_check_task: Optional[asyncio.Task] = None
-    
+
     async def startup(self):
         """Initialize database connections and start monitoring."""
         try:
@@ -75,14 +71,14 @@ class DatabaseManager:
             async with AsyncSessionLocal() as session:
                 await session.execute("SELECT 1")
             logger.info("✅ Async database connection established")
-            
+
             # Start health check monitoring
             self._health_check_task = asyncio.create_task(self._health_monitor())
-            
+
         except Exception as e:
             logger.error(f"❌ Database startup failed: {e}")
             raise
-    
+
     async def shutdown(self):
         """Clean shutdown of database connections."""
         if self._health_check_task:
@@ -91,28 +87,28 @@ class DatabaseManager:
                 await self._health_check_task
             except asyncio.CancelledError:
                 pass
-        
+
         await async_engine.dispose()
         sync_engine.dispose()
         logger.info("🛑 Database connections closed")
-    
+
     async def _health_monitor(self):
         """Monitor database connection health."""
         while True:
             try:
                 await asyncio.sleep(self._health_check_interval)
-                
+
                 # Test connection health
                 async with AsyncSessionLocal() as session:
                     await session.execute("SELECT 1")
-                
+
                 logger.debug("🏥 Database health check: OK")
-                
+
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error(f"🏥 Database health check failed: {e}")
-    
+
     async def get_connection_stats(self) -> dict:
         """Get current connection pool statistics."""
         pool = async_engine.pool
@@ -178,9 +174,9 @@ async def check_database_health() -> dict:
         async with AsyncSessionLocal() as session:
             result = await session.execute("SELECT version(), now()")
             row = result.fetchone()
-            
+
             stats = await db_manager.get_connection_stats()
-            
+
             return {
                 "status": "healthy",
                 "database_version": row[0] if row else "unknown",

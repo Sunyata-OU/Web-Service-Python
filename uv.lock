@@ -3063,10 +3063,12 @@ dev = [
 dev = [
     { name = "freezegun" },
     { name = "httpx" },
+    { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "pyyaml" },
+    { name = "ruff" },
 ]
 
 [package.metadata]
@@ -3106,10 +3108,12 @@ provides-extras = ["dev"]
 dev = [
     { name = "freezegun", specifier = ">=1.5.4" },
     { name = "httpx", specifier = ">=0.28.1" },
+    { name = "mypy", specifier = ">=1.17.1" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-asyncio", specifier = ">=1.1.0" },
     { name = "pytest-cov", specifier = ">=6.2.1" },
     { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "ruff", specifier = ">=0.12.7" },
 ]
 
 [[package]]
