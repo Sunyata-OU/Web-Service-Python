@@ -303,18 +303,17 @@ git commit -m "feat!: redesign API endpoints"     # → Major release
 When you push a version tag or use automated releases:
 
 1. **Automated testing** runs (all 84+ tests must pass)
-2. **Docker images** are built for multiple architectures
+2. **Python package** is built and attached to release
 3. **GitHub release** is created with auto-generated notes
-4. **Packages** are published to GitHub Container Registry
-5. **Changelog** is updated automatically
+4. **Changelog** is updated automatically
 
 ### Release Artifacts
 
 Each release includes:
 - **Source code** (tar.gz, zip)
 - **Python wheel** (built package)
-- **Docker images** (`ghcr.io/owner/web-service-python:latest`)
-- **Multi-platform support** (linux/amd64, linux/arm64)
+- **Release notes** with changelog
+- **Installation instructions**
 
 ### Setting up nginx and certbot
 

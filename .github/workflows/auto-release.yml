@@ -176,7 +176,7 @@ jobs:
             ### What this means:
             - Version will be bumped (${release-type})
             - GitHub release will be created
-            - Docker images will be built and pushed
+            - Python package will be built
             - Changelog will be updated
 
             ### Release Type Explanation:

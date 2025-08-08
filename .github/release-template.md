@@ -18,7 +18,11 @@ uv sync
 
 ### Using Docker
 ```bash
-docker pull ghcr.io/{OWNER}/{REPO}:{VERSION}
+# Build locally after cloning
+git clone https://github.com/{OWNER}/{REPO}.git
+cd Web-Service-Python
+git checkout v{VERSION}
+docker compose build
 ```
 
 ## 🚀 Quick Start

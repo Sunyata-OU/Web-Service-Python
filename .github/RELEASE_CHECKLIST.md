@@ -54,13 +54,12 @@ make bump-patch    # or bump-minor, bump-major
 The release workflow will automatically:
 - [ ] Run complete test suite
 - [ ] Build Python packages
-- [ ] Build and push Docker images
 - [ ] Create GitHub release with notes
-- [ ] Publish to container registry
+- [ ] Generate release notes
 
 ### 4. Post-Release Verification
 - [ ] GitHub release created successfully
-- [ ] Docker images available (`ghcr.io/owner/repo:version`)
+- [ ] Python packages attached to release
 - [ ] Release notes are accurate
 - [ ] Download links work
 - [ ] Documentation updated (if needed)
@@ -95,7 +94,7 @@ If a release has critical issues:
 
 1. **Immediate action:**
    - Mark GitHub release as pre-release
-   - Update Docker tags to point to previous version
+   - Revert to previous version tag if needed
 
 2. **Create hotfix** following procedure above
 
