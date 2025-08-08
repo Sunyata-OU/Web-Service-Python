@@ -31,7 +31,7 @@ def upload_object_to_s3(file_name: str, file, bucket: str | None = None):
     if not s3_client:
         return
     s3_client.upload_fileobj(file, bucket, filename)
-    logger.info("Uploaded %s to %s", filename, bucket)
+    logger.info(f"Uploaded {filename} to {bucket}")
     return filename
 
 
@@ -48,7 +48,7 @@ def download_object_from_s3(bucket_name, object_name, file_name):
     try:
         s3_client.download_file(bucket_name, object_name, file_name)
     except Exception as e:
-        logger.error(e)
+        logger.error(f"S3 operation failed: {str(e)}")
         return False
     return True
 
@@ -65,6 +65,6 @@ def get_object_url(bucket_name, object_name):
     try:
         url = s3_client.generate_presigned_url("get_object", Params={"Bucket": bucket_name, "Key": object_name})
     except Exception as e:
-        logger.error(e)
+        logger.error(f"S3 operation failed: {str(e)}")
         return None
     return url

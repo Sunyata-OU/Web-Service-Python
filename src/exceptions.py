@@ -178,7 +178,13 @@ class ErrorResponse:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
-        result = {"message": self.message, "errors": [error.to_dict() for error in self.errors]}
+        errors_list = []
+        for error in self.errors:
+            if hasattr(error, 'to_dict'):
+                errors_list.append(error.to_dict())
+            else:
+                errors_list.append(error)  # Already a dict
+        result = {"message": self.message, "errors": errors_list}
 
         if self.error_code:
             result["error_code"] = self.error_code

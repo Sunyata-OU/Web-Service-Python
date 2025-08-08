@@ -12,10 +12,9 @@ from sqlalchemy.ext.declarative import as_declarative, declared_attr
 
 from src.database import Base
 
-T = TypeVar("T", bound="AsyncBaseModel")
+T = TypeVar("T")
 
 
-@as_declarative()
 class AsyncBaseModel(Base):
     """Enhanced base model with async CRUD operations and utility methods."""
 
@@ -210,6 +209,8 @@ class PaginationParams(BaseModel):
 
 class PaginatedResponse(BaseModel, Generic[T]):
     """Generic paginated response model."""
+    
+    model_config = {"arbitrary_types_allowed": True}
 
     items: List[T]
     page: int

@@ -265,7 +265,7 @@ async def list_api_keys(current_user: User = Depends(get_current_user), db: Asyn
     """List user's API keys."""
     api_keys = await APIKey.get_multi(db, filters={"user_id": current_user.id}, order_by="created_at")
 
-    return [APIKeyResponse(**api_key.to_dict(), scopes=api_key.get_scopes()) for api_key in api_keys]
+    return [APIKeyResponse(**{**api_key.to_dict(), "scopes": api_key.get_scopes()}) for api_key in api_keys]
 
 
 @router.delete("/api-keys/{key_id}")

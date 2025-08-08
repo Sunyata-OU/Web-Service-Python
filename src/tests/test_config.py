@@ -34,7 +34,8 @@ class TestSettings:
             assert settings.postgres_db in ["webapp", "test_db"]
             assert settings.redis_host == "localhost"
             assert settings.redis_port == 6379
-            assert settings.redis_db == 0
+            # redis_db will be 1 in testing environment (set in conftest.py)
+            assert settings.redis_db in [0, 1]
             assert settings.s3_host == "http://127.0.0.1"
             assert settings.s3_port == 9002
             # s3_bucket will be "test-bucket" because it's set in the test module

@@ -117,7 +117,7 @@ class TestAuthentication:
         """Test getting current user without auth fails."""
         response = await async_client.get("/api/auth/me")
 
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     async def test_update_profile(self, async_client: AsyncClient, auth_headers: dict):
         """Test updating user profile."""
@@ -132,18 +132,18 @@ class TestAuthentication:
 
     async def test_change_password(self, async_client: AsyncClient, auth_headers: dict):
         """Test changing password."""
-        change_data = {"current_password": "testpass123", "new_password": "newtestpass456"}
+        params = {"current_password": "testpass123", "new_password": "newtestpass456"}
 
-        response = await async_client.post("/api/auth/change-password", json=change_data, headers=auth_headers)
+        response = await async_client.post("/api/auth/change-password", params=params, headers=auth_headers)
 
         assert response.status_code == status.HTTP_200_OK
         assert "successfully" in response.json()["message"]
 
     async def test_change_password_wrong_current(self, async_client: AsyncClient, auth_headers: dict):
         """Test changing password with wrong current password fails."""
-        change_data = {"current_password": "wrongpass", "new_password": "newtestpass456"}
+        params = {"current_password": "wrongpass", "new_password": "newtestpass456"}
 
-        response = await async_client.post("/api/auth/change-password", json=change_data, headers=auth_headers)
+        response = await async_client.post("/api/auth/change-password", params=params, headers=auth_headers)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 

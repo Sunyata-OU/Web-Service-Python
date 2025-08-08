@@ -41,6 +41,11 @@ from src.main import create_app
 from src.models.s3 import S3Object
 from src.models.user import APIKey, User
 
+# Import all models to ensure they're registered with Base metadata
+# This is needed for table creation in tests
+import src.models.user  # noqa: F401
+import src.models.s3  # noqa: F401
+
 
 # Test database setup
 @pytest.fixture(scope="session")
@@ -87,11 +92,17 @@ async def async_db_session(async_test_engine) -> AsyncGenerator[AsyncSession, No
     """Create async database session for testing."""
     async_session_maker = async_sessionmaker(async_test_engine, class_=AsyncSession, expire_on_commit=False)
 
+    # Clear all tables before starting test
+    async with async_test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
     async with async_session_maker() as session:
         try:
             yield session
         finally:
             await session.rollback()
+            await session.close()
 
 
 @pytest.fixture
@@ -126,7 +137,9 @@ def client(app) -> TestClient:
 @pytest.fixture
 async def async_client(app) -> AsyncGenerator[AsyncClient, None]:
     """Create async test client."""
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    from httpx import ASGITransport
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
 

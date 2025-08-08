@@ -46,40 +46,36 @@ def create_app() -> FastAPI:
     # Set up error handlers
     setup_error_handlers(app)
 
+    # Mount static files
+    app.mount("/static", StaticFiles(directory="src/static"), name="static")
+
+    # Include routers
+    app.include_router(auth.router, prefix="/api")
+    app.include_router(index.router, prefix="/web")
+    app.include_router(s3.router)
+
+    # Health check endpoints
+    @app.get("/health")
+    async def health_check() -> Dict[str, str]:
+        """Health check endpoint for monitoring."""
+        return {"status": "healthy", "timestamp": get_current_date_time(), "version": "0.1.0"}
+
+    @app.get("/test", response_model=Dict[str, str])
+    async def test() -> Dict[str, str]:
+        """Test endpoint to verify the application is working."""
+        return {
+            "result": "success",
+            "msg": f"It works! {get_current_date_time()}",
+        }
+
+    # Root endpoint
+    @app.get("/")
+    async def root() -> Dict[str, str]:
+        """Root endpoint with basic application information."""
+        return {"message": "Web Service Template API", "version": "0.1.0", "docs": "/docs", "health": "/health"}
+
     return app
 
 
 # Create the application
 app = create_app()
-
-
-# Mount static files
-app.mount("/static", StaticFiles(directory="src/static"), name="static")
-
-# Include routers
-app.include_router(auth.router, prefix="/api")
-app.include_router(index.router, prefix="/web")
-app.include_router(s3.router)
-
-
-# Health check endpoints
-@app.get("/health")
-async def health_check() -> Dict[str, str]:
-    """Health check endpoint for monitoring."""
-    return {"status": "healthy", "timestamp": get_current_date_time(), "version": "0.1.0"}
-
-
-@app.get("/test", response_model=Dict[str, str])
-async def test() -> Dict[str, str]:
-    """Test endpoint to verify the application is working."""
-    return {
-        "result": "success",
-        "msg": f"It works! {get_current_date_time()}",
-    }
-
-
-# Root endpoint
-@app.get("/")
-async def root() -> Dict[str, str]:
-    """Root endpoint with basic application information."""
-    return {"message": "Web Service Template API", "version": "0.1.0", "docs": "/docs", "health": "/health"}
