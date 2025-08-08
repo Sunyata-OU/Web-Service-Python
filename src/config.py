@@ -35,7 +35,6 @@ class Settings(BaseSettings):
     postgres_db: str = Field(default="webapp", description="PostgreSQL database name")
 
     @computed_field
-    @property
     def database_url(self) -> str:
         """Construct PostgreSQL database URL."""
         return (
@@ -44,7 +43,6 @@ class Settings(BaseSettings):
         )
 
     @computed_field
-    @property
     def async_database_url(self) -> str:
         """Construct async PostgreSQL database URL."""
         return (
@@ -58,7 +56,6 @@ class Settings(BaseSettings):
     redis_db: int = Field(default=0, description="Redis database number")
 
     @computed_field
-    @property
     def redis_url(self) -> str:
         """Construct Redis URL."""
         return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
@@ -71,7 +68,6 @@ class Settings(BaseSettings):
     s3_bucket: str = Field(default="uploads", description="Default S3 bucket name")
 
     @computed_field
-    @property
     def s3_endpoint(self) -> str:
         """Construct S3 endpoint URL."""
         return f"{self.s3_host}:{self.s3_port}"
@@ -85,16 +81,14 @@ class Settings(BaseSettings):
     celery_result_backend: Optional[str] = Field(default=None, description="Celery result backend")
 
     @computed_field
-    @property
     def celery_broker(self) -> str:
         """Get Celery broker URL, default to Redis."""
-        return self.celery_broker_url or self.redis_url
+        return self.celery_broker_url or f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
     @computed_field
-    @property
     def celery_backend(self) -> str:
         """Get Celery result backend, default to Redis."""
-        return self.celery_result_backend or self.redis_url
+        return self.celery_result_backend or f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
     # Authentication settings
     secret_key: str = Field(default="changeme-super-secret-key-in-production", description="Secret key for JWT tokens")

@@ -241,7 +241,7 @@ class ApplicationLogger:
         """Log business event with structured data."""
         message = f"Business event: {event}"
 
-        extra_data = {"event": event, "type": "business_event"}
+        extra_data: Dict[str, Any] = {"event": event, "type": "business_event"}
 
         if user_id:
             extra_data["user_id"] = user_id
@@ -269,7 +269,7 @@ class ApplicationLogger:
         level = logging.WARNING if severity == "medium" else logging.ERROR
         message = f"Security event: {event}"
 
-        extra_data = {"event": event, "severity": severity, "type": "security_event"}
+        extra_data: Dict[str, Any] = {"event": event, "severity": severity, "type": "security_event"}
 
         if user_id:
             extra_data["user_id"] = user_id

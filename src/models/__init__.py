@@ -1,7 +1,7 @@
 try:
     # Try new async models first
     from src.database import Base
-    from src.models.s3 import S3Object
+    from src.models.s3 import S3Object  # type: ignore[misc]
 except ImportError:
     # Fallback to legacy models for backward compatibility
     # Create a simple S3Object for backward compatibility
@@ -9,7 +9,7 @@ except ImportError:
 
     from src.models.database import Base, BaseModel
 
-    class S3Object(BaseModel):
+    class S3Object(BaseModel):  # type: ignore[no-redef]
         __tablename__ = "s3_objects"
 
         bucket_name = Column(String(255), nullable=False)

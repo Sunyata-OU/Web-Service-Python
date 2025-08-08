@@ -17,8 +17,6 @@ from src.models.base import AsyncBaseModel, BaseSchema, TimestampedSchema
 class User(AsyncBaseModel):
     """User model for authentication and authorization."""
 
-    __tablename__ = "users"
-
     # Basic info
     email = Column(String(255), unique=True, index=True, nullable=False)
     username = Column(String(100), unique=True, index=True, nullable=False)
@@ -103,7 +101,7 @@ class User(AsyncBaseModel):
 
     def verify_password(self, password: str) -> bool:
         """Verify user password."""
-        return verify_password(password, self.hashed_password)
+        return verify_password(password, str(self.hashed_password))
 
     async def update_password(self, db: AsyncSession, new_password: str):
         """Update user password."""
@@ -135,7 +133,7 @@ class User(AsyncBaseModel):
         """Check if account is locked."""
         if not self.locked_until:
             return False
-        return datetime.utcnow() < self.locked_until
+        return bool(datetime.utcnow() < self.locked_until)
 
     async def verify_email(self, db: AsyncSession):
         """Mark email as verified."""
@@ -143,13 +141,13 @@ class User(AsyncBaseModel):
 
     def is_admin(self) -> bool:
         """Check if user is admin."""
-        return self.role == UserRole.ADMIN
+        return str(self.role) == UserRole.ADMIN.value
 
     def has_permission(self, required_role: UserRole) -> bool:
         """Check if user has required permission level."""
         role_hierarchy = {UserRole.GUEST: 0, UserRole.USER: 1, UserRole.ADMIN: 2}
 
-        user_level = role_hierarchy.get(self.role, 0)
+        user_level = role_hierarchy.get(UserRole(str(self.role)), 0)
         required_level = role_hierarchy.get(required_role, 0)
 
         return user_level >= required_level
@@ -157,8 +155,6 @@ class User(AsyncBaseModel):
 
 class APIKey(AsyncBaseModel):
     """API Key model for programmatic access."""
-
-    __tablename__ = "api_keys"
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     name = Column(String(100), nullable=False)  # Human-readable name
@@ -219,7 +215,7 @@ class APIKey(AsyncBaseModel):
         """Check if API key is expired."""
         if not self.expires_at:
             return False
-        return datetime.utcnow() >= self.expires_at
+        return bool(datetime.utcnow() >= self.expires_at)
 
     def get_scopes(self) -> List[str]:
         """Get API key scopes."""
@@ -229,15 +225,13 @@ class APIKey(AsyncBaseModel):
         import json
 
         try:
-            return json.loads(self.scopes)
+            return json.loads(str(self.scopes) if self.scopes else "[]")
         except (json.JSONDecodeError, TypeError):
             return []
 
 
 class RefreshToken(AsyncBaseModel):
     """Refresh token model for JWT token refresh."""
-
-    __tablename__ = "refresh_tokens"
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     token_jti = Column(String(32), unique=True, index=True, nullable=False)  # JWT ID

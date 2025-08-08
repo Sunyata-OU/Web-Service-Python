@@ -8,7 +8,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from time import time
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -171,9 +171,8 @@ async def get_current_user_from_token(
 
     try:
         payload = verify_token(credentials.credentials, TokenType.ACCESS)
-        user_id: int = payload.get("user_id")
-
-        if user_id is None:
+        user_id = payload.get("user_id")
+        if not isinstance(user_id, int) or user_id is None:
             raise InvalidTokenError("Token missing user_id")
 
         user = await User.get(db, user_id)
@@ -215,7 +214,7 @@ async def get_current_user_from_api_key(
             raise AuthenticationError("API key has expired")
 
         # Get associated user
-        user = await User.get(db, api_key_obj.user_id)
+        user = await User.get(db, api_key_obj.user_id)  # type: ignore[arg-type]
         if not user or not user.is_active:
             raise AuthenticationError("User not found or inactive")
 
@@ -278,7 +277,7 @@ async def get_optional_user(
 
 # Rate limiting helper (simple in-memory implementation)
 
-_rate_limit_cache = defaultdict(list)
+_rate_limit_cache: Dict[str, List[float]] = defaultdict(list)
 
 
 def check_rate_limit(identifier: str, max_requests: int = 100, window_seconds: int = 3600) -> bool:

@@ -1,4 +1,5 @@
 from redis import Redis
-from src.config import Settings
+from src.config import get_settings
 
-redis_conn = Redis(host=Settings.REDIS_HOST, port=Settings.REDIS_PORT, db=Settings.REDIS_DB)
+settings = get_settings()
+redis_conn = Redis(host=settings.redis_host, port=settings.redis_port, db=settings.redis_db)
