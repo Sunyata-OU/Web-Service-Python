@@ -202,7 +202,7 @@ The project includes a comprehensive GitHub Actions workflow that automatically:
 
 - **Tests across Python versions** (3.10, 3.11, 3.12)
 - **Runs code quality checks** (linting, formatting, type checking)
-- **Executes all test suites** with coverage reporting  
+- **Executes all test suites** with coverage reporting
 - **Builds and tests Docker images**
 - **Uploads coverage to Codecov**
 - **Runs on pull requests and pushes** to main/develop branches
@@ -252,6 +252,69 @@ docker-compose -f docker-compose.debug.yml up
 
 ### Other editors
 Comment out the `debugpy` `start-debug.sh` file and run the docker compose file above.
+
+## 🏷️ Version Management & Releases
+
+This project uses **semantic versioning** (SemVer) with automated releases through GitHub Actions.
+
+### Version Format
+- **Major**: Breaking changes (1.0.0 → 2.0.0)
+- **Minor**: New features, backward compatible (1.0.0 → 1.1.0)
+- **Patch**: Bug fixes, backward compatible (1.0.0 → 1.0.1)
+- **Prerelease**: Alpha/beta versions (1.0.0-alpha.1)
+
+### Manual Version Bumping
+
+Use the convenient Make targets for version management:
+
+```bash
+# Check current version
+make version
+
+# Bump version (creates commit + tag + triggers release)
+make bump-patch      # 1.0.0 → 1.0.1 (bug fixes)
+make bump-minor      # 1.0.0 → 1.1.0 (new features)
+make bump-major      # 1.0.0 → 2.0.0 (breaking changes)
+make bump-prerelease # 1.0.0 → 1.0.1-alpha.0 (pre-release)
+
+# Generate release notes
+make release-notes   # Show changes since last release
+make changelog       # Update CHANGELOG.md
+```
+
+### Automated Releases
+
+The project supports **automated releases** based on commit messages using conventional commits:
+
+- `feat:` triggers **minor** release (new feature)
+- `fix:` triggers **patch** release (bug fix)
+- `feat!:` or `BREAKING CHANGE:` triggers **major** release
+- Other commits don't trigger releases
+
+**Example commits:**
+```bash
+git commit -m "feat: add user authentication"     # → Minor release
+git commit -m "fix: resolve database connection"  # → Patch release
+git commit -m "feat!: redesign API endpoints"     # → Major release
+```
+
+### Release Process
+
+When you push a version tag or use automated releases:
+
+1. **Automated testing** runs (all 84+ tests must pass)
+2. **Docker images** are built for multiple architectures
+3. **GitHub release** is created with auto-generated notes
+4. **Packages** are published to GitHub Container Registry
+5. **Changelog** is updated automatically
+
+### Release Artifacts
+
+Each release includes:
+- **Source code** (tar.gz, zip)
+- **Python wheel** (built package)
+- **Docker images** (`ghcr.io/owner/web-service-python:latest`)
+- **Multi-platform support** (linux/amd64, linux/arm64)
 
 ### Setting up nginx and certbot
 

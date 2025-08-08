@@ -1,0 +1,180 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+        enable-cache: true
+
+    - name: Set up Python
+      run: uv python install 3.11
+
+    - name: Install dependencies
+      run: uv sync --dev
+
+    - name: Run tests
+      env:
+        POSTGRES_USER: test_user
+        POSTGRES_PASSWORD: test_pass
+        POSTGRES_SERVER: localhost
+        POSTGRES_PORT: 5432
+        POSTGRES_DB: test_db
+        S3_ACCESS_KEY_ID: test_key
+        S3_ACCESS_KEY: test_secret
+        S3_BUCKET: test-bucket
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        ENVIRONMENT: testing
+        DEBUG: false
+        LOG_LEVEL: WARNING
+      services:
+        postgres:
+          image: postgres:15
+          env:
+            POSTGRES_USER: test_user
+            POSTGRES_PASSWORD: test_pass
+            POSTGRES_DB: test_db
+          options: >-
+            --health-cmd pg_isready
+            --health-interval 10s
+            --health-timeout 5s
+            --health-retries 5
+          ports:
+            - 5432:5432
+        redis:
+          image: redis:7
+          options: >-
+            --health-cmd "redis-cli ping"
+            --health-interval 10s
+            --health-timeout 5s
+            --health-retries 5
+          ports:
+            - 6379:6379
+      run: |
+        uv run pytest src/tests/ -v
+
+    - name: Extract version from tag
+      id: version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: Build package
+      run: |
+        uv build
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Create changelog content
+        echo "## Changes in ${{ steps.version.outputs.tag }}" > RELEASE_CHANGELOG.md
+        echo "" >> RELEASE_CHANGELOG.md
+
+        # Get commits since last tag
+        LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -z "$LAST_TAG" ]; then
+          echo "🎉 **Initial release**" >> RELEASE_CHANGELOG.md
+          echo "" >> RELEASE_CHANGELOG.md
+          echo "This is the first release of Web Service Python Template." >> RELEASE_CHANGELOG.md
+        else
+          echo "### Commits since $LAST_TAG:" >> RELEASE_CHANGELOG.md
+          echo "" >> RELEASE_CHANGELOG.md
+          git log --oneline $LAST_TAG..HEAD --pretty=format:"- %s (%h)" >> RELEASE_CHANGELOG.md
+        fi
+
+        echo "" >> RELEASE_CHANGELOG.md
+        echo "---" >> RELEASE_CHANGELOG.md
+        echo "" >> RELEASE_CHANGELOG.md
+        echo "### 📦 Installation" >> RELEASE_CHANGELOG.md
+        echo "" >> RELEASE_CHANGELOG.md
+        echo "\`\`\`bash" >> RELEASE_CHANGELOG.md
+        echo "git clone https://github.com/\${{ github.repository }}.git" >> RELEASE_CHANGELOG.md
+        echo "cd Web-Service-Python" >> RELEASE_CHANGELOG.md
+        echo "uv sync" >> RELEASE_CHANGELOG.md
+        echo "\`\`\`" >> RELEASE_CHANGELOG.md
+        echo "" >> RELEASE_CHANGELOG.md
+        echo "### 🐳 Docker" >> RELEASE_CHANGELOG.md
+        echo "" >> RELEASE_CHANGELOG.md
+        echo "\`\`\`bash" >> RELEASE_CHANGELOG.md
+        echo "cp .env-copy .env" >> RELEASE_CHANGELOG.md
+        echo "docker compose up -d" >> RELEASE_CHANGELOG.md
+        echo "\`\`\`" >> RELEASE_CHANGELOG.md
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.tag }}
+        name: Release ${{ steps.version.outputs.tag }}
+        body_path: RELEASE_CHANGELOG.md
+        files: |
+          dist/*
+        draft: false
+        prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker-release:
+    runs-on: ubuntu-latest
+    needs: release
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Extract version from tag
+      id: version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: docker/fastapi-service/DockerFile
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository }}:latest
+          ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
+        labels: |
+          org.opencontainers.image.title=Web Service Python Template
+          org.opencontainers.image.description=A full-service Python web service template using FastAPI
+          org.opencontainers.image.version=${{ steps.version.outputs.version }}
+          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          org.opencontainers.image.revision=${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64

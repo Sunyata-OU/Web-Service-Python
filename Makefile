@@ -294,5 +294,46 @@ prod-status: ## Production - Show production service status
 nginx-reload: ## Production - Reload nginx configuration
 	docker compose exec nginx nginx -s reload
 
+# Version Management Commands
+.PHONY: version
+version: ## Version - Show current version
+	@grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/'
+
+.PHONY: bump-major
+bump-major: ## Version - Bump major version (x.0.0)
+	@./scripts/bump-version.sh major
+
+.PHONY: bump-minor
+bump-minor: ## Version - Bump minor version (0.x.0)
+	@./scripts/bump-version.sh minor
+
+.PHONY: bump-patch
+bump-patch: ## Version - Bump patch version (0.0.x)
+	@./scripts/bump-version.sh patch
+
+.PHONY: bump-prerelease
+bump-prerelease: ## Version - Bump prerelease version (0.0.0-alpha.x)
+	@./scripts/bump-version.sh prerelease
+
+.PHONY: release-notes
+release-notes: ## Version - Generate release notes for current version
+	@echo "$(BLUE)Generating release notes...$(RESET)"
+	@VERSION=$$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/'); \
+	LAST_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo ""); \
+	echo "## Release v$$VERSION"; \
+	echo ""; \
+	if [ -z "$$LAST_TAG" ]; then \
+		echo "🎉 **Initial release**"; \
+	else \
+		echo "### Changes since $$LAST_TAG:"; \
+		echo ""; \
+		git log --oneline $$LAST_TAG..HEAD --pretty=format:"- %s (%h)"; \
+	fi
+
+.PHONY: changelog
+changelog: ## Version - Update changelog with unreleased changes
+	@echo "$(BLUE)Updating changelog...$(RESET)"
+	@./scripts/update-changelog.sh
+
 # Default target
 .DEFAULT_GOAL := help

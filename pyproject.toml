@@ -77,6 +77,27 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src"]
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.github",
+  "/docker",
+  "/nginx",
+  "/certbot",
+  "/.venv",
+  "/.pytest_cache",
+  "/__pycache__",
+  "/scripts",
+  "*.log",
+  ".env*",
+  "docker-compose*.yml",
+  "Dockerfile",
+  ".pre-commit-config.yaml",
+  "Makefile",
+]
+
 [tool.ruff]
 line-length = 120
 indent-width = 4
