@@ -36,15 +36,15 @@ os.environ.update(
     }
 )
 
-from src.database import Base, get_async_db
-from src.main import create_app
-from src.models.s3 import S3Object
-from src.models.user import APIKey, User
+import src.models.s3  # noqa: F401
 
 # Import all models to ensure they're registered with Base metadata
 # This is needed for table creation in tests
 import src.models.user  # noqa: F401
-import src.models.s3  # noqa: F401
+from src.database import Base, get_async_db
+from src.main import create_app
+from src.models.s3 import S3Object
+from src.models.user import APIKey, User
 
 
 # Test database setup
@@ -138,6 +138,7 @@ def client(app) -> TestClient:
 async def async_client(app) -> AsyncGenerator[AsyncClient, None]:
     """Create async test client."""
     from httpx import ASGITransport
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac

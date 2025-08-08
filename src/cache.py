@@ -26,11 +26,12 @@ class CacheManager:
         """Connect to Redis."""
         # Skip Redis connection in testing environment
         import os
+
         if os.environ.get("TESTING") == "true" or os.environ.get("ENVIRONMENT") == "testing":
             logger.info("Skipping Redis connection in test environment")
             self.redis_client = None
             return
-            
+
         try:
             self.redis_client = redis.from_url(
                 self.settings.redis_url,

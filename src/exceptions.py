@@ -180,7 +180,7 @@ class ErrorResponse:
         """Convert to dictionary."""
         errors_list = []
         for error in self.errors:
-            if hasattr(error, 'to_dict'):
+            if hasattr(error, "to_dict"):
                 errors_list.append(error.to_dict())
             else:
                 errors_list.append(error)  # Already a dict

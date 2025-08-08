@@ -9,8 +9,7 @@ from src.tests.utils import client
 
 # Skip S3 integration tests if S3 service is not available
 skip_s3_integration = pytest.mark.skipif(
-    os.environ.get("ENVIRONMENT") == "testing",
-    reason="S3 integration tests require MinIO service"
+    os.environ.get("ENVIRONMENT") == "testing", reason="S3 integration tests require MinIO service"
 )
 
 

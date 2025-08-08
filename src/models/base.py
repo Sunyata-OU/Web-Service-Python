@@ -8,7 +8,7 @@ from typing import Any, Dict, Generic, List, Optional, TypeVar
 from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, Integer, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.ext.declarative import as_declarative, declared_attr
+from sqlalchemy.ext.declarative import declared_attr
 
 from src.database import Base
 
@@ -209,7 +209,7 @@ class PaginationParams(BaseModel):
 
 class PaginatedResponse(BaseModel, Generic[T]):
     """Generic paginated response model."""
-    
+
     model_config = {"arbitrary_types_allowed": True}
 
     items: List[T]

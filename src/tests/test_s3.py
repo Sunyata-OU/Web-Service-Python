@@ -4,7 +4,6 @@ Tests for S3/file storage functionality.
 
 import os
 from io import BytesIO
-from unittest.mock import patch
 
 import pytest
 from fastapi import status
@@ -14,8 +13,7 @@ from src.models.s3 import S3Object
 
 # Skip S3 integration tests if S3 service is not available
 skip_s3_integration = pytest.mark.skipif(
-    os.environ.get("ENVIRONMENT") == "testing",
-    reason="S3 integration tests require MinIO service"
+    os.environ.get("ENVIRONMENT") == "testing", reason="S3 integration tests require MinIO service"
 )
 
 
