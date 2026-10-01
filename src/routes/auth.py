@@ -108,7 +108,7 @@ async def login(credentials: UserLogin, request: Request, db: AsyncSession = Dep
     refresh_token = create_refresh_token(subject=user.email, user_id=user.id)
 
     # Store refresh token
-    from jose import jwt
+    import jwt
 
     refresh_payload = jwt.decode(refresh_token, settings.secret_key, algorithms=[settings.algorithm])
 
