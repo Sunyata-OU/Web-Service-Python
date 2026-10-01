@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Replaced MinIO with RustFS as the S3-compatible service (MinIO no longer publishes Docker images)
 - Upgraded dependency stack (FastAPI, Starlette, SQLAlchemy 2.1, Jupyter, etc.) to resolve open security advisories
-- Replaced `passlib` with `bcrypt`; missing bearer credentials now return 401
+- Replaced `python-jose` with `PyJWT` (drops the unpatched `ecdsa` dependency) and `passlib` with `bcrypt`; missing bearer credentials now return 401
 - Fixed Docker build; CI now tests Python 3.13
 
 ### Added

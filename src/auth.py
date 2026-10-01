@@ -11,9 +11,9 @@ from time import time
 from typing import Any, Dict, List, Optional, Union
 
 import bcrypt
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import get_settings
