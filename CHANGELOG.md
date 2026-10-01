@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Container could not write to `/var/log/webapp` (root-owned named volume); log dir is now owned by the app user
+
 ### Changed
 - Replaced MinIO with RustFS as the S3-compatible service (MinIO no longer publishes Docker images)
 - Upgraded dependency stack (FastAPI, Starlette, SQLAlchemy 2.1, Jupyter, etc.) to resolve open security advisories

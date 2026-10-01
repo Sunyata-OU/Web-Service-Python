@@ -60,6 +60,9 @@ RUN mkdir -p -m 0700 /home/appuser/.ssh && \
     ssh-keyscan github.com gitlab.com bitbucket.org >> /home/appuser/.ssh/known_hosts && \
     chown -R appuser:appgroup /home/appuser/.ssh
 
+# Log directory (named volumes inherit this ownership on first creation)
+RUN mkdir -p /var/log/webapp && chown appuser:appgroup /var/log/webapp
+
 # Set up application directory
 WORKDIR /app
 
