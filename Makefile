@@ -45,7 +45,7 @@ init: ## Development - Complete project initialization
 	pre-commit install
 	docker compose build
 	$(MAKE) migrate
-	docker compose up -d db redis_db minio
+	docker compose up -d db redis_db rustfs
 	sleep 10
 	$(MAKE) create-bucket
 	@echo "$(GREEN)✅ Initialization complete!$(RESET)"
@@ -243,7 +243,7 @@ redis-shell: ## Database - Open Redis shell
 	docker compose exec redis_db redis-cli
 
 .PHONY: create-bucket
-create-bucket: ## Database - Create MinIO S3 bucket
+create-bucket: ## Database - Create RustFS S3 bucket
 	@echo "$(BLUE)Creating S3 bucket...$(RESET)"
 	docker compose up createbuckets
 

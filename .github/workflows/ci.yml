@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     services:
       postgres:
@@ -110,6 +110,6 @@ jobs:
 
     - name: Test Docker image
       run: |
-        docker compose up -d db redis_db minio
+        docker compose up -d --no-deps db redis_db
         sleep 10
-        docker compose run --rm fastapi python -c "from src.config import get_settings; print('Docker build successful')"
+        docker compose run --rm --no-deps fastapi python -c "from src.config import get_settings; print('Docker build successful')"

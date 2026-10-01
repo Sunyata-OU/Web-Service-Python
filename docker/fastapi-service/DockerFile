@@ -1,7 +1,7 @@
 ARG PYTHON_VERSION=3.11
 
 # Build stage
-FROM python:${PYTHON_VERSION}-slim as builder
+FROM python:${PYTHON_VERSION}-slim AS builder
 
 # Install system dependencies for building
 RUN apt-get update && \
@@ -25,9 +25,10 @@ WORKDIR /app
 COPY pyproject.toml uv.lock* ./
 
 # Create virtual environment and install dependencies with SSH mount support
-RUN --mount=type=ssh uv venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-RUN --mount=type=ssh uv sync --frozen --no-dev
+RUN uv venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH" \
+    UV_PROJECT_ENVIRONMENT=/opt/venv
+RUN uv sync --frozen --no-dev --no-install-project
 
 # Production stage
 FROM python:${PYTHON_VERSION}-slim

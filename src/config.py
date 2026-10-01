@@ -60,7 +60,7 @@ class Settings(BaseSettings):
         """Construct Redis URL."""
         return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
-    # S3/MinIO settings
+    # S3/RustFS settings
     s3_host: str = Field(default="http://127.0.0.1", description="S3 host URL")
     s3_port: int = Field(default=9002, description="S3 port")
     s3_access_key_id: str = Field(description="S3 access key ID")

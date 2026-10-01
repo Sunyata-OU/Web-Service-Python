@@ -15,7 +15,9 @@ POSTGRES_SERVER: str = os.getenv("POSTGRES_SERVER", "localhost")
 POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT", "5432"))
 POSTGRES_DB: str = os.getenv("POSTGRES_DB", "step")
 
-DATABASE_URL: str = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
+DATABASE_URL: str = (
+    f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
+)
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

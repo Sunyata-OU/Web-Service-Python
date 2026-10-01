@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Replaced MinIO with RustFS as the S3-compatible service (MinIO no longer publishes Docker images)
+- Upgraded dependency stack (FastAPI, Starlette, SQLAlchemy 2.1, Jupyter, etc.) to resolve open security advisories
+- Replaced `passlib` with `bcrypt`; missing bearer credentials now return 401
+- Fixed Docker build; CI now tests Python 3.13
+
 ### Added
 - Comprehensive test suite with 84 passing tests
 - Pre-commit hooks for code quality
@@ -30,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial FastAPI web service template
 - PostgreSQL database with SQLAlchemy ORM
 - Redis caching and session management
-- MinIO S3-compatible object storage
+- RustFS S3-compatible object storage (replaces MinIO, whose Docker images are no longer published)
 - Celery background task processing
 - JWT authentication and authorization
 - Docker Compose orchestration

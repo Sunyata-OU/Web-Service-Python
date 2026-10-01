@@ -19,7 +19,7 @@ settings = get_settings()
 
 # Sync engine (for migrations and legacy compatibility)
 sync_engine = create_engine(
-    settings.database_url,
+    settings.database_url.replace("postgresql://", "postgresql+psycopg2://", 1),  # SQLAlchemy 2.1 defaults to psycopg3
     poolclass=pool.QueuePool,
     pool_size=10,
     max_overflow=20,

@@ -75,21 +75,21 @@ setup_environment() {
             BASE_URL="http://localhost:${SERVICE_PORT:-8000}"
             DB_HOST="localhost"
             REDIS_HOST="localhost"
-            MINIO_HOST="localhost"
+            S3_HOST_NAME="localhost"
             USE_SSL=false
             ;;
         dev)
             BASE_URL="https://${DOMAIN:-localhost}"
             DB_HOST="${DOMAIN:-localhost}"
             REDIS_HOST="${DOMAIN:-localhost}" 
-            MINIO_HOST="${DOMAIN:-localhost}"
+            S3_HOST_NAME="${DOMAIN:-localhost}"
             USE_SSL=true
             ;;
         prod)
             BASE_URL="https://${DOMAIN}"
             DB_HOST="${DOMAIN}"
             REDIS_HOST="${DOMAIN}"
-            MINIO_HOST="${DOMAIN}"
+            S3_HOST_NAME="${DOMAIN}"
             USE_SSL=true
             if [[ -z "$DOMAIN" ]]; then
                 error "DOMAIN environment variable required for production monitoring"
@@ -140,7 +140,7 @@ check_docker_environment() {
     fi
     
     # Check each service
-    local services=("fastapi" "db" "redis_db" "minio")
+    local services=("fastapi" "db" "redis_db" "rustfs")
     if [[ "$ENV" == "prod" ]]; then
         services+=("nginx" "certbot")
     fi
@@ -364,14 +364,14 @@ check_database_connectivity() {
         return 1
     fi
     
-    # MinIO
-    info "Checking MinIO connectivity..."
-    if wait_for_port "$MINIO_HOST" "${S3_PORT:-9002}" 5; then
-        success "MinIO is accessible"
-        log_result "MinIO: OK"
+    # RustFS
+    info "Checking RustFS connectivity..."
+    if wait_for_port "$S3_HOST_NAME" "${S3_PORT:-9002}" 5; then
+        success "RustFS is accessible"
+        log_result "RustFS: OK"
     else
-        error "MinIO is not accessible"
-        log_result "MinIO: FAILED"
+        error "RustFS is not accessible"
+        log_result "RustFS: FAILED"
         return 1
     fi
     

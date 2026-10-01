@@ -5,7 +5,7 @@ networks:
 volumes:
   postgres_data:
   redis_data:
-  minio_data:
+  rustfs_data:
   nginx_logs:
   app_logs:
 
@@ -14,8 +14,6 @@ services:
     build:
       context: .
       dockerfile: docker/fastapi-service/DockerFile
-      ssh:
-        - default
       args:
         PYTHON_VERSION: ${PYTHON_VERSION}
         SERVICE_PORT: ${SERVICE_PORT}
@@ -31,7 +29,7 @@ services:
       - app-network
     depends_on:
       - db
-      - minio
+      - rustfs
       - redis_db
     volumes:
       - app_logs:/var/log/webapp
@@ -220,29 +218,25 @@ services:
     profiles:
       - nginx
 
-  minio:
-    image: minio/minio:${MINIO_VERSION}
-    container_name: minio
-    hostname: minio
+  rustfs:
+    image: rustfs/rustfs:${RUSTFS_VERSION}
+    container_name: rustfs
+    hostname: rustfs
     networks:
       - app-network
-    command: server --address ":${S3_PORT}" --console-address ":${MINIO_SERVER_PORT}" /data
     ports:
       - ${S3_PORT}:${S3_PORT}
-      - ${MINIO_SERVER_PORT}:${MINIO_SERVER_PORT}
+      - ${RUSTFS_CONSOLE_PORT}:${RUSTFS_CONSOLE_PORT}
     environment:
-      - MINIO_ROOT_USER=${S3_ACCESS_KEY_ID}
-      - MINIO_ROOT_PASSWORD=${S3_ACCESS_KEY}
+      - RUSTFS_ACCESS_KEY=${S3_ACCESS_KEY_ID}
+      - RUSTFS_SECRET_KEY=${S3_ACCESS_KEY}
+      - RUSTFS_ADDRESS=:${S3_PORT}
+      - RUSTFS_CONSOLE_ADDRESS=:${RUSTFS_CONSOLE_PORT}
+      - RUSTFS_CONSOLE_ENABLE=true
     volumes:
-      - minio_data:/data
+      - rustfs_data:/data
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "http://localhost:${MINIO_SERVER_PORT}/minio/health/live",
-        ]
+      test: ["CMD-SHELL", "curl -fs http://localhost:${S3_PORT}/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -250,7 +244,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128M
+          memory: 256M
           cpus: '0.5'
         reservations:
           memory: 64M
@@ -263,20 +257,21 @@ services:
     restart: unless-stopped
 
   createbuckets:
-    image: minio/mc
+    image: amazon/aws-cli:latest
     networks:
       - app-network
     depends_on:
-      - minio
+      rustfs:
+        condition: service_healthy
+    environment:
+      - AWS_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${S3_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=us-east-1
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc alias set myminio "http://minio:${S3_PORT}" "${S3_ACCESS_KEY_ID}" "${S3_ACCESS_KEY}";
-      /usr/bin/mc admin info myminio;
-      /usr/bin/mc mb myminio/clickhouse;
-      /usr/bin/mc policy set public myminio/clickhouse;
-      if [ -z "${S3_BUCKET}" ]; then exit 0; fi;
-      /usr/bin/mc mb myminio/${S3_BUCKET}
-      /usr/bin/mc policy set public myminio/${S3_BUCKET};
+      if [ -z '${S3_BUCKET}' ]; then exit 0; fi;
+      aws --endpoint-url http://rustfs:${S3_PORT} s3api head-bucket --bucket ${S3_BUCKET} 2>/dev/null ||
+      aws --endpoint-url http://rustfs:${S3_PORT} s3 mb s3://${S3_BUCKET};
       exit 0;
       "
     deploy:
