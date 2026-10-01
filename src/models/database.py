@@ -24,7 +24,9 @@ warnings.warn(
 settings = get_settings()
 
 # Legacy sync engine - kept for backward compatibility
-engine = create_engine(settings.database_url.replace("+asyncpg", ""))  # Remove async driver
+engine = create_engine(
+    settings.database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+)  # SQLAlchemy 2.1 defaults to psycopg3
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Import Base from the new async database

@@ -16,6 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Framework :: FastAPI",
 ]
 
@@ -25,7 +26,7 @@ dependencies = [
     "pydantic>=2.10.0",
     "pydantic-settings>=2.6.0",
     # Database
-    "sqlalchemy>=2.0.36",
+    "sqlalchemy[asyncio]>=2.0.36",
     "alembic>=1.14.0",
     "asyncpg>=0.30.0", # Better async PostgreSQL driver
     "psycopg2-binary>=2.9.10", # Keep for compatibility
@@ -43,7 +44,7 @@ dependencies = [
     "redis>=5.2.0",
     # Authentication & Security
     "python-jose[cryptography]>=3.3.0",
-    "passlib[bcrypt]>=1.7.4",
+    "bcrypt>=4.0.0",
     "python-multipart>=0.0.20", # For form data
     "email-validator>=2.2.0",
 ]
@@ -120,7 +121,7 @@ line-ending = "auto"
 
 [tool.ruff.lint]
 # Enable the isort rules.
-extend-select = ["I"]
+select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.ruff.lint.isort]
 case-sensitive = true

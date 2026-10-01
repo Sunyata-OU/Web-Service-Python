@@ -117,7 +117,7 @@ class TestAuthentication:
         """Test getting current user without auth fails."""
         response = await async_client.get("/api/auth/me")
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     async def test_update_profile(self, async_client: AsyncClient, auth_headers: dict):
         """Test updating user profile."""

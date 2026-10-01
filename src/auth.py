@@ -10,17 +10,16 @@ from enum import Enum
 from time import time
 from typing import Any, Dict, List, Optional, Union
 
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
-from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import get_settings
 from src.database import get_async_db
 
 # Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 # Get settings
@@ -76,12 +75,15 @@ class InvalidTokenError(AuthenticationError):
 # Password utilities
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return bcrypt.checkpw(plain_password.encode()[:72], hashed_password.encode())
+    except ValueError:
+        return False
 
 
 def get_password_hash(password: str) -> str:
     """Hash a password."""
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode()[:72], bcrypt.gensalt()).decode()
 
 
 def generate_secure_token(length: int = 32) -> str:
