@@ -61,32 +61,32 @@ A comprehensive Python web service template using FastAPI with a full-featured D
 ### Docker
 
 1. Install Docker and Docker-compose
-2.Copy the .env-copy file to .env and fill in the variables
-1. If the docker requires access to a private repository you need to load your ssh key to your ssh-agent using `ssh-add` command.
+2. Copy the .env-copy file to .env and fill in the variables
+3. (Optional) If the build needs private git dependencies, load your ssh key into your ssh-agent and build with `make build-ssh` (see [SSH-SETUP.md](SSH-SETUP.md)). Plain builds don't need an agent.
 
    ```bash
     eval "$(ssh-agent -s)"
     ssh-add ~/.ssh/<your-ssh-key> #set the path to your ssh key
     ```
 
-2. Build the docker compose file
+4. Build the docker compose file
 
 ```bash
-docker-compose build
+docker compose build
 ```
 
-4. Run the docker compose file
+5. Run the docker compose file
 
 ```bash
-docker-compose up
+docker compose up
 ```
 
-5. The webserver should be running on localhost on the port defined in the .env file
-6. Create the bucket named in the .env file (`make create-bucket`, or via the RustFS console on port 9001)
-7. The project uses alemic to manage the database. To create the database run the following command
+6. The webserver should be running on localhost on the port defined in the .env file
+7. Create the bucket named in the .env file (`make create-bucket`, or via the RustFS console on port 9001)
+8. The project uses alembic to manage the database. To create the database run the following command
 
 ```bash
-alemic upgrade head
+alembic upgrade head
 ```
 
 ### Use makefile
@@ -105,7 +105,7 @@ alemic upgrade head
 make init
 ```
 
-5. The webserver should be running on localhost on the port defined in the .env file
+6. The webserver should be running on localhost on the port defined in the .env file
 
 ## Development
 
@@ -200,7 +200,7 @@ uv run pre-commit run --all-files # Run all hooks
 
 The project includes a comprehensive GitHub Actions workflow that automatically:
 
-- **Tests across Python versions** (3.10, 3.11, 3.12)
+- **Tests across Python versions** (3.10, 3.11, 3.12, 3.13)
 - **Runs code quality checks** (linting, formatting, type checking)
 - **Executes all test suites** with coverage reporting
 - **Builds and tests Docker images**

@@ -2,6 +2,8 @@
 
 This template includes comprehensive SSH support for accessing private repositories and packages during both build and runtime.
 
+> SSH forwarding is **opt-in**. Plain `docker compose build` works without an SSH agent; use `make build-ssh` (or `--ssh default`) only when the build needs private repositories.
+
 ## Overview
 
 The Docker configuration supports:

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- SSH agent forwarding for builds is opt-in again (`make build-ssh`); plain builds no longer require an agent
 - Container could not write to `/var/log/webapp` (root-owned named volume); log dir is now owned by the app user
 
 ### Changed
