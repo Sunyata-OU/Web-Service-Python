@@ -10,17 +10,17 @@ services:
       - ./src:/src/
     depends_on:
       - redis_db
-      - minio
+      - rustfs
       - db
     command: "./start-debug.sh"
   redis_db:
     extends:
       file: docker-compose.yml
       service: redis_db
-  minio:
+  rustfs:
     extends:
       file: docker-compose.yml
-      service: minio
+      service: rustfs
   db:
     extends:
       file: docker-compose.yml

@@ -249,7 +249,7 @@ def mock_redis():
 
 @pytest.fixture
 def mock_s3_client():
-    """Mock S3/MinIO client."""
+    """Mock S3/RustFS client."""
     mock_client = Mock()
     mock_client.upload_fileobj.return_value = None
     mock_client.download_file.return_value = None

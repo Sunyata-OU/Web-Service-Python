@@ -58,8 +58,8 @@ DOMAIN=your-domain.com
 
 # Change all default passwords
 POSTGRES_PASSWORD=your-secure-password
-S3_ACCESS_KEY_ID=your-minio-user
-S3_ACCESS_KEY=your-minio-password
+S3_ACCESS_KEY_ID=your-s3-access-key
+S3_ACCESS_KEY=your-s3-secret-key
 
 # Update service configuration
 LOG_LEVEL=INFO
@@ -100,7 +100,7 @@ The deployment includes:
 - **FastAPI**: Web application server
 - **PostgreSQL**: Primary database
 - **Redis**: Caching and task queue
-- **MinIO**: S3-compatible object storage
+- **RustFS**: S3-compatible object storage
 - **Celery**: Background task processing
 - **Nginx**: Reverse proxy with SSL termination
 - **Certbot**: Automatic SSL certificate renewal
@@ -150,7 +150,7 @@ All services include health checks with proper timeouts:
 - FastAPI: HTTP health endpoint
 - PostgreSQL: Connection test
 - Redis: PING command
-- MinIO: Health API
+- RustFS: S3 API port
 - Nginx: HTTP status check
 
 #### Logging
@@ -176,7 +176,7 @@ Certificates automatically renew via the certbot container:
 - [ ] Test domain resolution: `dig your-domain.com`
 
 ### Security Hardening
-- [ ] Change default MinIO credentials
+- [ ] Change default RustFS credentials
 - [ ] Use strong PostgreSQL password
 - [ ] Enable fail2ban (recommended)
 - [ ] Configure server firewall

@@ -27,7 +27,7 @@ A comprehensive Python web service template using FastAPI with a full-featured D
 - [x] **PostgreSQL** - Primary database with async support
 - [x] **Redis** - Caching and session storage
 - [x] **Celery** - Background task processing
-- [x] **MinIO** - S3-compatible object storage
+- [x] **RustFS** - S3-compatible object storage
 - [x] **Nginx** - Reverse proxy with SSL/TLS support
 - [x] **Certbot** - Automated SSL certificate management
 
@@ -82,7 +82,7 @@ docker-compose up
 ```
 
 5. The webserver should be running on localhost on the port defined in the .env file
-6. Create a bucket in the minio server with the name defined in the .env file
+6. Create the bucket named in the .env file (`make create-bucket`, or via the RustFS console on port 9001)
 7. The project uses alemic to manage the database. To create the database run the following command
 
 ```bash
