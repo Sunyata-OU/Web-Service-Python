@@ -110,6 +110,6 @@ jobs:
 
     - name: Test Docker image
       run: |
-        docker compose up -d db redis_db minio
+        docker compose up -d --no-deps db redis_db
         sleep 10
-        docker compose run --rm fastapi python -c "from src.config import get_settings; print('Docker build successful')"
+        docker compose run --rm --no-deps fastapi python -c "from src.config import get_settings; print('Docker build successful')"
